@@ -1,0 +1,5 @@
+{
+  "name": "Meu Financeiro",
+  "description": "A comprehensive personal finance application with GitHub Dark Mode aesthetics, features separate credit card tracking, investment monitoring, and Sinop/MT timezone handling.",
+  "requestFramePermissions": []
+}

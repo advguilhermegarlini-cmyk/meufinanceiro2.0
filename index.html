@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meu Financeiro - Finance App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              github: {
+                bg: 'var(--bg)',
+                surface: 'var(--surface)',
+                border: 'var(--border)',
+                primary: 'var(--primary)',
+                success: 'var(--success)',
+                danger: 'var(--danger)',
+                warning: 'var(--warning)',
+                purple: 'var(--purple)',
+                text: 'var(--text)',
+                muted: 'var(--muted)',
+                'text-inverse': 'var(--text-inverse)',
+              }
+            },
+            fontFamily: {
+              sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Helvetica', 'Arial', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      :root {
+        --bg: #ffffff;
+        --surface: #f6f8fa;
+        --border: #d0d7de;
+        --primary: #bf8700;
+        --success: #1a7f37;
+        --danger: #cf222e;
+        --warning: #9a6700;
+        --purple: #8250df;
+        --text: #24292f;
+        --muted: #57606a;
+        --text-inverse: #ffffff;
+        color-scheme: light;
+      }
+      .dark {
+        --bg: #0d1117;
+        --surface: #161b22;
+        --border: #30363d;
+        --primary: #f6ad31;
+        --success: #3fb950;
+        --danger: #f85149;
+        --warning: #d29922;
+        --purple: #bc8cff;
+        --text: #c9d1d9;
+        --muted: #8b949e;
+        --text-inverse: #0d1117;
+        color-scheme: dark;
+      }
+      body, div, nav, aside, button, input, select, textarea, table, tr, td, th {
+        transition-property: background-color, border-color, color, fill, stroke;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 200ms;
+      }
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-track { background: var(--bg); }
+      ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "three": "https://aistudiocdn.com/three@^0.170.0",
+    "@react-three/fiber": "https://aistudiocdn.com/@react-three/fiber@^8.17.0",
+    "@react-three/drei": "https://aistudiocdn.com/@react-three/drei@^9.114.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+    "recharts": "https://aistudiocdn.com/recharts@^3.5.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-github-bg text-github-text antialiased h-screen overflow-hidden">
+    <div id="root" class="h-full"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
