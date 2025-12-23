@@ -4,6 +4,7 @@ import { useApp, SYSTEM_CATEGORY_ID } from '../context';
 import { Card, Button } from './Layout';
 import { Plus, X, ArrowUpCircle, ArrowDownCircle, RefreshCw, Tag, Wallet, CreditCard, Sparkles } from 'lucide-react';
 import { TransactionType } from '../types';
+import { sortByNameIgnoreAccents } from '../utils';
 
 interface TransactionFormModalProps {
   isOpen: boolean;
@@ -102,7 +103,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ isOp
     });
   };
 
-  const visibleCategories = categories.filter(c => tab === 'income' ? c.type === 'income' : c.type === 'expense').sort((a, b) => a.name.localeCompare(b.name));
+  const visibleCategories = sortByNameIgnoreAccents(categories.filter(c => tab === 'income' ? c.type === 'income' : c.type === 'expense'));
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-end md:items-center justify-center z-[200] md:p-4 backdrop-blur-md animate-in fade-in duration-300">

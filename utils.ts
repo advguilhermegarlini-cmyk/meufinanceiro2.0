@@ -42,6 +42,18 @@ export const getMonthName = (date: Date) => {
 
 export const generateId = () => Math.random().toString(36).substr(2, 9);
 
+export const roundToTwoDecimals = (value: number): number => {
+  return Math.round(value * 100) / 100;
+};
+
+export const removeAccents = (str: string): string => {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+};
+
+export const sortByNameIgnoreAccents = <T extends { name: string }>(items: T[]): T[] => {
+  return [...items].sort((a, b) => removeAccents(a.name).localeCompare(removeAccents(b.name)));
+};
+
 export const GITHUB_COLORS = [
   '#58a6ff', // Blue
   '#3fb950', // Green

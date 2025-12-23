@@ -5,7 +5,7 @@ import { OrbitControls, ContactShadows, PerspectiveCamera, Environment, Float, H
 import * as THREE from 'three';
 import { useApp } from '../context';
 import { Card } from './Layout';
-import { formatCurrency } from '../utils';
+import { formatCurrency, sortByNameIgnoreAccents } from '../utils';
 import { 
   TrendingUp, TrendingDown, DollarSign, CreditCard, Activity, CheckCircle2, AlertCircle, Smartphone, Clock, Droplets, PieChart, Loader2
 } from 'lucide-react';
@@ -358,8 +358,7 @@ export const Dashboard = () => {
   const categoryData = useMemo(() => {
     if (!categories || !categories.length || !transactions || transactions.length === 0) return [];
     
-    return categories
-      .sort((a, b) => a.name.localeCompare(b.name))
+    return sortByNameIgnoreAccents(categories)
       .map(cat => {
       const total = transactions
         .filter(t => {

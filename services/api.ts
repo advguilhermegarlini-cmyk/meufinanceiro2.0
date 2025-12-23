@@ -30,10 +30,23 @@ const saveUserToFirestore = async (user: User) => {
     }
 };
 
-// Salvar dados do usuário (categorias, bancos, etc) no Firestore
+// Salvar dados do usuário no Firestore (com sincronização de deletados)
 const saveUserDataToFirestore = async (userId: string, dataType: string, data: any[]) => {
     try {
         const collectionRef = collection(db, 'users', userId, dataType);
+        
+        // Obter documentos existentes
+        const snapshot = await getDocs(collectionRef);
+        const existingIds = snapshot.docs.map(doc => doc.id);
+        const newIds = data.map(item => item.id);
+        
+        // Deletar documentos que não estão mais na lista
+        const toDelete = existingIds.filter(id => !newIds.includes(id));
+        for (const id of toDelete) {
+            await deleteDoc(doc(collectionRef, id));
+        }
+        
+        // Salvar/atualizar documentos
         for (const item of data) {
             const docRef = doc(collectionRef, item.id);
             await setDoc(docRef, item, { merge: true });

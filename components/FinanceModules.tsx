@@ -2,12 +2,12 @@
 import React, { useState } from 'react';
 import { useApp, SYSTEM_CATEGORY_ID } from '../context';
 import { Card, Button } from './Layout';
-import { formatCurrency, GITHUB_COLORS } from '../utils';
+import { formatCurrency, GITHUB_COLORS, sortByNameIgnoreAccents, roundToTwoDecimals } from '../utils';
 import { 
   Wallet, Plus, Trash2, Pencil, Calendar, TrendingUp, 
   ChevronLeft, ChevronRight, CheckCircle, AlertCircle, Clock, 
   CreditCard, Lock, RotateCcw, Monitor, Tag, X, PiggyBank,
-  ArrowUpCircle, ArrowDownCircle, Info, Undo2, ArrowRight, Percent
+  ArrowUpCircle, ArrowDownCircle, Info, Undo2, ArrowRight, Percent, Edit2
 } from 'lucide-react';
 import { Bank, Category, Investment, Subscription } from '../types';
 import { CreditCardFormModal } from './CreditCardFormModal';
@@ -30,11 +30,17 @@ const Modal: React.FC<{ isOpen: boolean, onClose: () => void, title: string, chi
 };
 
 const InvoiceCard: React.FC<{ card: Bank }> = ({ card }) => {
-    const { deleteBank, getInvoiceStats, reopenInvoice, categories, chargebackTransaction, subscriptions, addSubscription, deleteSubscription } = useApp();
+    const { deleteBank, getInvoiceStats, reopenInvoice, categories, chargebackTransaction, subscriptions, addSubscription, deleteSubscription, payInvoice, banks } = useApp();
     const [viewDate, setViewDate] = useState(new Date());
     const [showSubs, setShowSubs] = useState(false);
     const [isAddingSub, setIsAddingSub] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [isPayingInvoice, setIsPayingInvoice] = useState(false);
+    const [paymentData, setPaymentData] = useState({
+        amount: 0,
+        sourceBankId: '',
+        paymentDate: new Date().toISOString().split('T')[0]
+    });
     
     const [subForm, setSubForm] = useState({
         name: '',
@@ -69,6 +75,19 @@ const InvoiceCard: React.FC<{ card: Bank }> = ({ card }) => {
         });
         setIsAddingSub(false);
         setSubForm({ name: '', amount: '', billingDay: 1, categoryId: '' });
+    };
+
+    const handlePayInvoice = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!paymentData.sourceBankId) {
+            alert('Selecione a conta de origem');
+            return;
+        }
+        const amountToPay = roundToTwoDecimals(paymentData.amount || roundToTwoDecimals(stats.total - stats.paidAmount));
+        const isFullPayment = Math.abs(amountToPay - roundToTwoDecimals(stats.total - stats.paidAmount)) < 0.01; // Comparação com tolerância para ponto flutuante
+        await payInvoice(card.id, amountToPay, new Date(paymentData.paymentDate), paymentData.sourceBankId, stats.referenceMonth, isFullPayment);
+        setIsPayingInvoice(false);
+        setPaymentData({ amount: 0, sourceBankId: '', paymentDate: new Date().toISOString().split('T')[0] });
     };
 
     const handleChargeback = async (t: any) => {
@@ -121,7 +140,7 @@ const InvoiceCard: React.FC<{ card: Bank }> = ({ card }) => {
                                 </div>
                                 <select required className="w-full bg-github-surface border border-github-border rounded-xl px-3 py-2 text-xs text-github-text outline-none font-bold" value={subForm.categoryId} onChange={e => setSubForm({...subForm, categoryId: e.target.value})}>
                                     <option value="">Categoria...</option>
-                                    {categories.filter(c => c.type === 'expense').map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    {sortByNameIgnoreAccents(categories.filter(c => c.type === 'expense')).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
                                 <div className="flex justify-end gap-2">
                                     <button type="button" onClick={() => setIsAddingSub(false)} className="text-[10px] font-black uppercase text-github-muted">Cancelar</button>
@@ -212,6 +231,8 @@ const InvoiceCard: React.FC<{ card: Bank }> = ({ card }) => {
                         <div>
                             <p className="text-[10px] font-black uppercase text-github-muted tracking-widest mb-1">Total da Fatura</p>
                             <p className="text-2xl font-mono font-black text-github-text">{formatCurrency(stats.total)}</p>
+                            <p className="text-[10px] font-black uppercase text-github-warning tracking-widest mt-2">Valor Restante</p>
+                            <p className="text-lg font-mono font-black text-github-warning">{formatCurrency(roundToTwoDecimals(stats.total - stats.paidAmount))}</p>
                         </div>
                         <div className="text-right">
                             <p className="text-[10px] font-black uppercase text-github-success tracking-widest mb-1">Valor Pago</p>
@@ -220,7 +241,10 @@ const InvoiceCard: React.FC<{ card: Bank }> = ({ card }) => {
                     </div>
                     
                     {stats.total > stats.paidAmount && (
-                        <Button onClick={() => alert('Pague esta fatura na aba "Extrato" ou crie uma Transação de Saída.')} className="w-full py-4 rounded-2xl">
+                        <Button onClick={() => {
+                            setPaymentData({ ...paymentData, amount: roundToTwoDecimals(stats.total - stats.paidAmount) });
+                            setIsPayingInvoice(true);
+                        }} className="w-full py-4 rounded-2xl">
                             <CheckCircle size={18} /> Pagar Fatura
                         </Button>
                     )}
@@ -238,6 +262,30 @@ const InvoiceCard: React.FC<{ card: Bank }> = ({ card }) => {
               onClose={() => setIsEditing(false)} 
               editingCard={card}
             />
+
+            <Modal isOpen={isPayingInvoice} onClose={() => setIsPayingInvoice(false)} title="Pagar Fatura">
+                <form onSubmit={handlePayInvoice} className="space-y-6">
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-github-muted px-1">Valor a Pagar</label>
+                        <input required type="number" step="0.01" min="0" max={roundToTwoDecimals(stats.total - stats.paidAmount)} className="w-full bg-github-bg border border-github-border rounded-2xl px-5 py-4 text-github-text outline-none focus:border-github-primary transition-all font-bold shadow-inner" value={paymentData.amount} onChange={e => setPaymentData({...paymentData, amount: roundToTwoDecimals(parseFloat(e.target.value) || 0)})} placeholder="0,00" />
+                        <p className="text-[10px] text-github-muted">Valor total: {formatCurrency(roundToTwoDecimals(stats.total - stats.paidAmount))}</p>
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-github-muted px-1">Data do Pagamento</label>
+                        <input required type="date" className="w-full bg-github-bg border border-github-border rounded-2xl px-5 py-4 text-github-text outline-none focus:border-github-primary transition-all font-bold shadow-inner" value={paymentData.paymentDate} onChange={e => setPaymentData({...paymentData, paymentDate: e.target.value})} />
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-github-muted px-1">Conta de Origem</label>
+                        <select required className="w-full bg-github-bg border border-github-border rounded-2xl px-5 py-4 text-github-text outline-none focus:border-github-primary transition-all font-bold shadow-inner" value={paymentData.sourceBankId} onChange={e => setPaymentData({...paymentData, sourceBankId: e.target.value})}>
+                            <option value="">Selecione uma conta...</option>
+                            {banks && banks.filter(b => b.id !== card.id).map(b => (
+                                <option key={b.id} value={b.id}>{b.name} ({formatCurrency(b.balance)})</option>
+                            ))}
+                        </select>
+                    </div>
+                    <Button type="submit" variant="primary" className="w-full py-5 text-lg shadow-xl shadow-github-success/10">Confirmar Pagamento</Button>
+                </form>
+            </Modal>
         </Card>
     );
 };
@@ -441,8 +489,10 @@ export const BanksModule = () => {
 };
 
 export const CategoriesModule = () => {
-    const { categories, deleteCategory, addCategory } = useApp();
+    const { categories, deleteCategory, addCategory, updateCategory } = useApp();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingCategory, setEditingCategory] = useState<any>(null);
     const [formData, setFormData] = useState({ name: '', type: 'expense' as 'income' | 'expense' });
 
     const handleAdd = async (e: React.FormEvent) => {
@@ -450,6 +500,24 @@ export const CategoriesModule = () => {
         await addCategory(formData.name, formData.type);
         setIsModalOpen(false);
         setFormData({ name: '', type: 'expense' });
+    };
+
+    const handleEdit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await updateCategory({
+            ...editingCategory,
+            name: formData.name,
+            type: formData.type
+        });
+        setIsEditModalOpen(false);
+        setEditingCategory(null);
+        setFormData({ name: '', type: 'expense' });
+    };
+
+    const openEditModal = (cat: any) => {
+        setEditingCategory(cat);
+        setFormData({ name: cat.name, type: cat.type });
+        setIsEditModalOpen(true);
     };
 
     return (
@@ -464,23 +532,62 @@ export const CategoriesModule = () => {
                 </Button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                {categories.sort((a, b) => a.name.localeCompare(b.name)).map(cat => (
-                    <Card key={cat.id} className="p-6 flex flex-col items-center gap-4 group relative hover:scale-105 transition-transform border-github-border shadow-sm">
-                        <div className="w-16 h-16 rounded-3xl flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: cat.color }}>
-                            <Tag size={32} />
-                        </div>
-                        <div className="text-center">
-                            <h4 className="font-bold text-github-text text-sm">{cat.name}</h4>
-                            <p className={`text-[10px] font-black uppercase tracking-widest ${cat.type === 'income' ? 'text-github-success' : 'text-github-danger'}`}>
-                                {cat.type === 'income' ? 'Receita' : 'Despesa'}
-                            </p>
-                        </div>
-                        <button onClick={() => { if(window.confirm('Excluir esta categoria?')) deleteCategory(cat.id); }} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-2 text-github-danger bg-github-bg/80 rounded-xl transition-all">
-                            <Trash2 size={14} />
-                        </button>
-                    </Card>
-                ))}
+            {/* Despesas */}
+            <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                    <div className="h-1 w-8 bg-github-danger rounded-full"></div>
+                    <h3 className="text-xl font-black text-github-text uppercase">Despesas</h3>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                    {sortByNameIgnoreAccents(categories.filter(c => c.type === 'expense')).map(cat => (
+                        <Card key={cat.id} className="p-6 flex flex-col items-center gap-4 group relative hover:scale-105 transition-transform border-github-border shadow-sm">
+                            <div className="w-16 h-16 rounded-3xl flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: cat.color }}>
+                                <Tag size={32} />
+                            </div>
+                            <div className="text-center">
+                                <h4 className="font-bold text-github-text text-sm">{cat.name}</h4>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-github-danger">Despesa</p>
+                            </div>
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex gap-1 transition-all">
+                                <button onClick={() => openEditModal(cat)} className="p-2 text-github-primary bg-github-bg/80 rounded-xl hover:bg-github-primary hover:text-white transition-all">
+                                    <Edit2 size={14} />
+                                </button>
+                                <button onClick={() => { if(window.confirm('Excluir esta categoria?')) deleteCategory(cat.id); }} className="p-2 text-github-danger bg-github-bg/80 rounded-xl hover:bg-github-danger hover:text-white transition-all">
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+            </div>
+
+            {/* Receitas */}
+            <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                    <div className="h-1 w-8 bg-github-success rounded-full"></div>
+                    <h3 className="text-xl font-black text-github-text uppercase">Receitas</h3>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                    {sortByNameIgnoreAccents(categories.filter(c => c.type === 'income')).map(cat => (
+                        <Card key={cat.id} className="p-6 flex flex-col items-center gap-4 group relative hover:scale-105 transition-transform border-github-border shadow-sm">
+                            <div className="w-16 h-16 rounded-3xl flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: cat.color }}>
+                                <Tag size={32} />
+                            </div>
+                            <div className="text-center">
+                                <h4 className="font-bold text-github-text text-sm">{cat.name}</h4>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-github-success">Receita</p>
+                            </div>
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex gap-1 transition-all">
+                                <button onClick={() => openEditModal(cat)} className="p-2 text-github-primary bg-github-bg/80 rounded-xl hover:bg-github-primary hover:text-white transition-all">
+                                    <Edit2 size={14} />
+                                </button>
+                                <button onClick={() => { if(window.confirm('Excluir esta categoria?')) deleteCategory(cat.id); }} className="p-2 text-github-danger bg-github-bg/80 rounded-xl hover:bg-github-danger hover:text-white transition-all">
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
             </div>
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Nova Categoria">
@@ -501,6 +608,27 @@ export const CategoriesModule = () => {
                         </div>
                     </div>
                     <Button type="submit" variant="primary" className="w-full py-5 text-lg shadow-xl shadow-github-success/10">Salvar Categoria</Button>
+                </form>
+            </Modal>
+
+            <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Editar Categoria">
+                <form onSubmit={handleEdit} className="space-y-6">
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-github-muted px-1">Nome</label>
+                        <input required className="w-full bg-github-bg border border-github-border rounded-2xl px-5 py-4 text-github-text outline-none focus:border-github-primary transition-all font-bold shadow-inner" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Ex: Lazer, Saúde..." />
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-github-muted px-1">Tipo</label>
+                        <div className="flex bg-github-bg rounded-2xl p-1.5 border border-github-border">
+                            <button type="button" onClick={() => setFormData({...formData, type: 'expense'})} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase transition-all ${formData.type === 'expense' ? 'bg-github-danger text-white' : 'text-github-muted'}`}>
+                                <ArrowDownCircle size={16}/> Saída
+                            </button>
+                            <button type="button" onClick={() => setFormData({...formData, type: 'income'})} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase transition-all ${formData.type === 'income' ? 'bg-github-success text-white' : 'text-github-muted'}`}>
+                                <ArrowUpCircle size={16}/> Entrada
+                            </button>
+                        </div>
+                    </div>
+                    <Button type="submit" variant="primary" className="w-full py-5 text-lg shadow-xl shadow-github-success/10">Atualizar Categoria</Button>
                 </form>
             </Modal>
         </div>
