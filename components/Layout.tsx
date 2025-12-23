@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { SINOP_TIMEZONE } from '../utils';
 import { TransactionFormModal } from './TransactionFormModal';
+import logoImg from '../logo/pngwing.com.png';
 
 export const Card: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ children, className = '', ...props }) => (
   <div className={`bg-github-surface border border-github-border rounded-2xl shadow-sm transition-all ${className}`} {...props}>
@@ -83,9 +84,14 @@ export const Layout = ({ children, activeTab, setActiveTab }: {
       
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex flex-col w-72 border-r border-github-border bg-github-surface/50 backdrop-blur-xl">
-        <div className="p-8">
-          <h1 className="text-2xl font-black tracking-tighter text-github-primary mb-1">Meu Financeiro</h1>
-          <p className="text-[10px] font-black uppercase tracking-widest text-github-muted">{SINOP_TIMEZONE} • {timeString}</p>
+        <div className="p-8 flex items-center gap-4">
+          <div className="h-12 w-12 flex-shrink-0">
+            <img src={logoImg} alt="Logo" className="h-full w-full object-contain" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black tracking-tighter text-github-primary mb-1">Meu Financeiro</h1>
+            <p className="text-[10px] font-black uppercase tracking-widest text-github-muted">{SINOP_TIMEZONE} • {timeString}</p>
+          </div>
         </div>
         
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
@@ -129,7 +135,12 @@ export const Layout = ({ children, activeTab, setActiveTab }: {
 
       {/* Header Mobile */}
       <header className="md:hidden flex items-center justify-between px-6 py-4 border-b border-github-border bg-github-surface/80 backdrop-blur-md z-40">
-        <h1 className="text-xl font-black tracking-tighter text-github-primary">Financeiro</h1>
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8">
+            <img src={logoImg} alt="Logo" className="h-full w-full object-contain" />
+          </div>
+          <h1 className="text-xl font-black tracking-tighter text-github-primary">Financeiro</h1>
+        </div>
         <div className="flex items-center gap-3">
             <button onClick={toggleTheme} className="p-2 text-github-muted">
                 {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
@@ -141,37 +152,37 @@ export const Layout = ({ children, activeTab, setActiveTab }: {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto pb-24 md:pb-0 px-4 py-6 md:p-8">
+      <main className="flex-1 overflow-y-auto pb-32 md:pb-0 px-4 py-6 md:p-8">
         <div className="max-w-6xl mx-auto">
           {children}
         </div>
       </main>
 
       {/* Bottom Nav - Mobile */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-github-surface/90 backdrop-blur-xl border-t border-github-border flex items-center justify-around px-2 pb-safe z-50">
-        {tabs.slice(0, 5).map(tab => (
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-github-surface/90 backdrop-blur-xl border-t border-github-border flex items-center justify-around px-1 pb-safe z-50 overflow-x-auto">
+        {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all ${
+            className={`flex flex-col items-center gap-0.5 px-2.5 py-2.5 rounded-xl transition-all min-w-[60px] ${
               activeTab === tab.id ? 'text-github-primary' : 'text-github-muted'
             }`}
           >
-            <tab.icon size={22} strokeWidth={activeTab === tab.id ? 2.5 : 2} />
-            <span className="text-[10px] font-black uppercase tracking-tighter">{tab.label}</span>
+            <tab.icon size={18} strokeWidth={activeTab === tab.id ? 2.5 : 2} />
+            <span className="text-[8px] font-black uppercase tracking-tighter text-center leading-tight">{tab.label}</span>
           </button>
         ))}
-        
-        {/* Floating Add Button Mobile */}
-        <button
-          onClick={() => setTransactionModalOpen(true)}
-          className="absolute -top-8 left-1/2 -translate-x-1/2 w-16 h-16 bg-github-success text-white rounded-2xl shadow-2xl flex items-center justify-center border-4 border-github-bg active:scale-90 transition-transform"
-        >
-          <Plus size={32} />
-        </button>
       </nav>
 
-      {/* Floating Button Desktop */}
+      {/* Floating Add Button Mobile */}
+      <button
+        onClick={() => setTransactionModalOpen(true)}
+        className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-github-success text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 border-4 border-github-bg"
+      >
+        <Plus size={28} />
+      </button>
+
+      {/* Floating Add Button Desktop */}
       <button
         onClick={() => setTransactionModalOpen(true)}
         className="hidden md:flex fixed bottom-8 right-8 w-16 h-16 bg-github-success text-white rounded-2xl shadow-2xl items-center justify-center hover:scale-110 active:scale-95 transition-all z-[150] border-4 border-github-bg"

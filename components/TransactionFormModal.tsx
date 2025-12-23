@@ -102,7 +102,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ isOp
     });
   };
 
-  const visibleCategories = categories.filter(c => tab === 'income' ? c.type === 'income' : c.type === 'expense');
+  const visibleCategories = categories.filter(c => tab === 'income' ? c.type === 'income' : c.type === 'expense').sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-end md:items-center justify-center z-[200] md:p-4 backdrop-blur-md animate-in fade-in duration-300">
@@ -214,11 +214,19 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ isOp
           )}
 
           {banks.find(b => b.id === formData.bankId)?.type === 'credit' && tab === 'expense' && (
-            <div className="space-y-1 animate-in slide-in-from-top-2 bg-github-purple/5 p-4 rounded-2xl border border-github-purple/20">
+            <div className="space-y-3 animate-in slide-in-from-top-2 bg-github-purple/5 p-4 rounded-2xl border border-github-purple/20">
                 <label className="text-[10px] font-black uppercase tracking-widest text-github-purple px-1">Parcelamento</label>
-                <div className="flex items-center gap-4">
-                    <input type="range" min="1" max="24" className="flex-1 accent-github-purple" value={formData.installments} onChange={e => setFormData({...formData, installments: parseInt(e.target.value)})} />
-                    <span className="w-16 text-center font-black text-github-purple bg-github-purple/10 rounded-xl py-3 border border-github-purple/30 text-lg shadow-sm">{formData.installments}x</span>
+                <div className="flex items-center gap-3">
+                    <input type="range" min="1" max="400" className="flex-1 accent-github-purple" value={formData.installments} onChange={e => setFormData({...formData, installments: Math.max(1, Math.min(400, parseInt(e.target.value)))})} />
+                    <input 
+                        type="number" 
+                        min="1" 
+                        max="400" 
+                        value={formData.installments} 
+                        onChange={e => setFormData({...formData, installments: Math.max(1, Math.min(400, parseInt(e.target.value) || 1))})}
+                        className="w-16 text-center font-black text-github-purple bg-github-purple/10 rounded-xl py-2 px-2 border border-github-purple/30 text-lg shadow-sm outline-none focus:border-github-purple transition-colors"
+                    />
+                    <span className="text-xs font-black text-github-purple">x</span>
                 </div>
                 <div className="flex justify-between items-center mt-2 px-1">
                     <p className="text-[10px] text-github-muted uppercase font-black tracking-widest">Valor da Parcela</p>

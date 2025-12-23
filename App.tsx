@@ -5,9 +5,10 @@ import { Layout, Button, Card } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
 import { Transactions } from './components/Transactions';
 import { CreditCardsModule, BanksModule, CategoriesModule, InvestmentsModule } from './components/FinanceModules';
-import { AlertTriangle, ShieldCheck, User, Mail, Moon, Sun, LogOut, Save, HeartPulse, ChevronRight, Camera, Trash2, Settings, X, Lock, Key, Eye, EyeOff, Sparkles } from 'lucide-react';
+import { AlertTriangle, User, Mail, Moon, Sun, LogOut, Save, HeartPulse, ChevronRight, Camera, Trash2, Settings, X, Lock, Key, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { SINOP_TIMEZONE } from './utils';
 import { TEST_USER_EMAIL } from './services/api';
+import logoImg from './logo/pngwing.com.png';
 
 interface ErrorBoundaryProps {
   children?: React.ReactNode;
@@ -64,8 +65,13 @@ const ProfileModule = () => {
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
+    
+    const [showAvatarSelector, setShowAvatarSelector] = useState(false);
 
     const avatarInputRef = useRef<HTMLInputElement>(null);
+    
+    // Avatar predefinidos
+    const predefinedAvatars = [1, 2, 3, 4, 5, 6, 7, 8].map(num => `/avatar/${num}.${num === 2 || num === 6 || num === 8 ? 'jfif' : 'jpg'}`);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -86,9 +92,23 @@ const ProfileModule = () => {
         if (file) {
             try {
                 await uploadAvatar(file);
+                setShowAvatarSelector(false);
             } catch (err) {
                 alert("Erro ao carregar imagem.");
             }
+        }
+    };
+
+    const handleSelectPredefinedAvatar = async (avatarUrl: string) => {
+        try {
+            // Carregar a imagem do URL e converter para base64
+            const response = await fetch(avatarUrl);
+            const blob = await response.blob();
+            const file = new File([blob], 'avatar.jpg', { type: blob.type });
+            await uploadAvatar(file);
+            setShowAvatarSelector(false);
+        } catch (err) {
+            alert("Erro ao selecionar avatar.");
         }
     };
 
@@ -147,8 +167,8 @@ const ProfileModule = () => {
             <form onSubmit={handleSave} className="space-y-6">
                 <Card className="p-8 border-github-border">
                     <div className="flex flex-col md:flex-row items-center gap-8">
-                        <div className="relative group cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
-                            <div className="w-24 h-24 rounded-2xl bg-github-surface border-2 border-github-primary flex items-center justify-center overflow-hidden shadow-xl transition-transform group-hover:scale-105">
+                        <div className="relative group">
+                            <div className="w-24 h-24 rounded-2xl bg-github-surface border-2 border-github-primary flex items-center justify-center overflow-hidden shadow-xl transition-transform hover:scale-105 cursor-pointer" onClick={() => setShowAvatarSelector(!showAvatarSelector)}>
                                 {user?.photoURL ? (
                                     <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
                                 ) : (
@@ -158,14 +178,42 @@ const ProfileModule = () => {
                                     <Camera size={24} />
                                 </div>
                             </div>
-                            <input 
-                                type="file" 
-                                ref={avatarInputRef} 
-                                className="hidden" 
-                                accept="image/*" 
-                                onChange={handleAvatarUpload} 
-                            />
                         </div>
+
+                        {showAvatarSelector && (
+                            <div className="flex-1 bg-github-bg/50 p-6 rounded-2xl border border-github-border animate-in slide-in-from-left-2">
+                                <h4 className="text-sm font-black text-github-text mb-4 uppercase tracking-tighter">Escolha um Avatar</h4>
+                                <div className="grid grid-cols-4 gap-3 mb-4">
+                                    {predefinedAvatars.map((avatar, idx) => (
+                                        <div
+                                            key={idx}
+                                            onClick={() => handleSelectPredefinedAvatar(avatar)}
+                                            className={`w-16 h-16 rounded-xl overflow-hidden cursor-pointer border-2 transition-all hover:scale-110 ${
+                                                user?.photoURL === avatar ? 'border-github-primary shadow-lg' : 'border-github-border'
+                                            }`}
+                                        >
+                                            <img src={avatar} alt={`Avatar ${idx + 1}`} className="w-full h-full object-cover" />
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="relative">
+                                    <input 
+                                        type="file" 
+                                        ref={avatarInputRef} 
+                                        className="hidden" 
+                                        accept="image/*" 
+                                        onChange={handleAvatarUpload} 
+                                    />
+                                    <Button onClick={() => avatarInputRef.current?.click()} variant="secondary" className="w-full text-xs">
+                                        <Camera size={14} /> Upload Customizado
+                                    </Button>
+                                </div>
+                                <Button onClick={() => setShowAvatarSelector(false)} variant="ghost" className="w-full text-xs mt-2">
+                                    Fechar
+                                </Button>
+                            </div>
+                        )}
+                        
                         <div className="flex-1 text-center md:text-left">
                             <h3 className="text-xl font-bold text-github-text mb-1">{user?.displayName}</h3>
                             <p className="text-sm text-github-muted">{user?.email}</p>
@@ -421,8 +469,8 @@ const AuthScreen = () => {
   return (
     <div className="min-h-screen bg-[#0d1117] flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-[#161b22] border border-[#30363d] rounded-[2.5rem] p-10 shadow-2xl animate-in fade-in zoom-in-95 duration-700">
-        <div className="flex justify-center mb-8 text-github-primary">
-          <ShieldCheck size={64} strokeWidth={1.5} className="animate-pulse" />
+        <div className="flex justify-center mb-8">
+          <img src={logoImg} alt="Logo" className="h-24 w-auto object-contain" />
         </div>
         <h1 className="text-3xl font-black text-center text-white mb-8 tracking-tighter">Meu Financeiro</h1>
         

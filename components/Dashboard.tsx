@@ -9,6 +9,7 @@ import { formatCurrency } from '../utils';
 import { 
   TrendingUp, TrendingDown, DollarSign, CreditCard, Activity, CheckCircle2, AlertCircle, Smartphone, Clock, Droplets, PieChart, Loader2
 } from 'lucide-react';
+import logoImg from '../logo/pngwing.com.png';
 
 interface Slice3DProps {
   startAngle: number;
@@ -357,7 +358,9 @@ export const Dashboard = () => {
   const categoryData = useMemo(() => {
     if (!categories || !categories.length || !transactions || transactions.length === 0) return [];
     
-    return categories.map(cat => {
+    return categories
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(cat => {
       const total = transactions
         .filter(t => {
             if (!t.date || t.type !== 'expense') return false;
@@ -383,6 +386,16 @@ export const Dashboard = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      
+      <div className="flex items-center gap-4 mb-8">
+        <div className="h-16 w-16 flex-shrink-0">
+          <img src={logoImg} alt="Logo" className="h-full w-full object-contain" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-black text-github-text uppercase tracking-tighter">Dashboard</h2>
+          <p className="text-xs text-github-muted font-medium">Bem-vindo de volta ao seu controle financeiro</p>
+        </div>
+      </div>
       
       <HealthThermometer />
 

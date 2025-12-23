@@ -465,7 +465,7 @@ export const CategoriesModule = () => {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                {categories.map(cat => (
+                {categories.sort((a, b) => a.name.localeCompare(b.name)).map(cat => (
                     <Card key={cat.id} className="p-6 flex flex-col items-center gap-4 group relative hover:scale-105 transition-transform border-github-border shadow-sm">
                         <div className="w-16 h-16 rounded-3xl flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: cat.color }}>
                             <Tag size={32} />

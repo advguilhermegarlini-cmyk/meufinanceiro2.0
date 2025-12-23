@@ -202,7 +202,8 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     logout();
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await AuthService.logout();
     setUser(null);
     localStorage.removeItem('mc_user');
     setTransactions([]);

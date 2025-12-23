@@ -1,12 +1,77 @@
 
 import { User, Transaction, Category, Bank, Investment, Subscription } from '../types';
 import { generateId } from '../utils';
+import { db, auth } from '../src/services/firebase';
+import { doc, setDoc, getDoc, collection, getDocs, query, where, deleteDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 
 const DELAY = 400;
 export const TEST_USER_EMAIL = 'teste@exemplo.com';
 export const SYSTEM_CATEGORY_ID = 'system_internal';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// --- FIREBASE UTILS ---
+const saveUserToFirestore = async (user: User) => {
+    try {
+        const userRef = doc(db, 'users', user.id);
+        await setDoc(userRef, {
+            displayName: user.displayName,
+            email: user.email,
+            currency: user.currency || 'BRL',
+            theme: user.theme || 'dark',
+            photoURL: user.photoURL || null,
+            timezone: user.timezone || 'America/Cuiaba',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        }, { merge: true });
+    } catch (e) {
+        console.error('Erro ao salvar usuário no Firestore:', e);
+    }
+};
+
+// Salvar dados do usuário (categorias, bancos, etc) no Firestore
+const saveUserDataToFirestore = async (userId: string, dataType: string, data: any[]) => {
+    try {
+        const collectionRef = collection(db, 'users', userId, dataType);
+        for (const item of data) {
+            const docRef = doc(collectionRef, item.id);
+            await setDoc(docRef, item, { merge: true });
+        }
+    } catch (e) {
+        console.error(`Erro ao salvar ${dataType}:`, e);
+    }
+};
+
+// Carregar dados do usuário do Firestore
+const loadUserDataFromFirestore = async (userId: string, dataType: string): Promise<any[]> => {
+    try {
+        const collectionRef = collection(db, 'users', userId, dataType);
+        const snapshot = await getDocs(collectionRef);
+        return snapshot.docs.map(doc => doc.data());
+    } catch (e) {
+        console.error(`Erro ao carregar ${dataType}:`, e);
+        return [];
+    }
+};
+
+// Deletar dados do usuário do Firestore
+const deleteUserDataFromFirestore = async (userId: string) => {
+    try {
+        const dataTypes = ['transactions', 'categories', 'banks', 'investments', 'subscriptions'];
+        for (const dataType of dataTypes) {
+            const collectionRef = collection(db, 'users', userId, dataType);
+            const snapshot = await getDocs(collectionRef);
+            for (const doc of snapshot.docs) {
+                await deleteDoc(doc.ref);
+            }
+        }
+        // Deletar documento do usuário
+        await deleteDoc(doc(db, 'users', userId));
+    } catch (e) {
+        console.error('Erro ao deletar dados do usuário:', e);
+    }
+};
 
 const getTable = <T>(key: string): T[] => {
     try {
@@ -87,122 +152,120 @@ const seedTestData = (userId: string) => {
 // --- AUTH SERVICE ---
 export const AuthService = {
     async login(email: string, password?: string): Promise<User> {
-        await delay(DELAY);
-        
-        if (email === TEST_USER_EMAIL) {
-            let users = getTable<User & {password?: string}>('mc_users_db');
-            let testUser = users.find(u => u.email === TEST_USER_EMAIL);
+        try {
+            // Usar Firebase Auth
+            const userCredential = await signInWithEmailAndPassword(auth, email, password || '');
+            const firebaseUser = userCredential.user;
             
-            if (!testUser) {
-                testUser = {
-                    id: 'user-teste-id',
-                    displayName: 'Usuário Demo',
-                    email: TEST_USER_EMAIL,
+            // Carregar dados do usuário do Firestore
+            const userDocRef = doc(db, 'users', firebaseUser.uid);
+            const userDocSnapshot = await getDoc(userDocRef);
+            
+            if (userDocSnapshot.exists()) {
+                const userData = userDocSnapshot.data() as User;
+                return { ...userData, id: firebaseUser.uid };
+            } else {
+                // Se não existir, criar com dados do Firebase
+                const newUser: User = {
+                    id: firebaseUser.uid,
+                    displayName: firebaseUser.displayName || '',
+                    email: firebaseUser.email || email,
                     currency: 'BRL',
-                    theme: 'dark',
-                    password: '123'
+                    theme: 'dark'
                 };
-                users.push(testUser);
-                setTable('mc_users_db', users);
+                await saveUserToFirestore(newUser);
+                return newUser;
             }
-            
-            // Sempre garante que os dados de teste estão presentes para este ID
-            seedTestData(testUser.id);
-            
-            const { password: _, ...user } = testUser;
-            return user;
+        } catch (error: any) {
+            throw new Error(error.message || 'Erro ao fazer login');
         }
-
-        const users = getTable<User & {password?: string}>('mc_users_db');
-        let found = users.find(u => u.email === email && u.password === password);
-        
-        if (!found) throw new Error('Email ou senha inválidos.');
-        
-        const { password: _, ...user } = found;
-        return user;
     },
 
     async register(name: string, email: string, password?: string): Promise<User> {
-        await delay(DELAY);
-        const users = getTable<User & {password?: string}>('mc_users_db');
-        
-        if (users.find(u => u.email === email)) {
-            throw new Error('Email já cadastrado.');
+        try {
+            // Criar usuário no Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password || '');
+            const firebaseUser = userCredential.user;
+            
+            // Criar documento do usuário no Firestore
+            const newUser: User = {
+                id: firebaseUser.uid,
+                displayName: name,
+                email: firebaseUser.email || email,
+                currency: 'BRL',
+                theme: 'dark'
+            };
+            
+            await saveUserToFirestore(newUser);
+            
+            return newUser;
+        } catch (error: any) {
+            throw new Error(error.message || 'Erro ao fazer cadastro');
         }
-
-        const newUser = {
-            id: generateId(),
-            displayName: name,
-            email,
-            currency: 'BRL',
-            theme: 'dark' as 'dark' | 'light',
-            password
-        };
-
-        users.push(newUser);
-        setTable('mc_users_db', users);
-
-        const { password: _, ...user } = newUser;
-        return user;
     },
 
     async updateUser(user: User): Promise<User> {
-        await delay(DELAY);
-        const users = getTable<User>('mc_users_db');
-        const index = users.findIndex(u => u.id === user.id);
-        
-        if (index !== -1) {
-            users[index] = { ...users[index], ...user };
-            setTable('mc_users_db', users);
-            return users[index];
+        try {
+            // Atualizar user no localStorage
+            localStorage.setItem('mc_user', JSON.stringify(user));
+            // Salvar no Firestore com photoURL e outros dados
+            await saveUserToFirestore(user);
+            return user;
+        } catch (error: any) {
+            throw new Error(error.message || 'Erro ao atualizar usuário');
         }
-        throw new Error("User not found");
+    },
+
+    async logout(): Promise<void> {
+        try {
+            await signOut(auth);
+        } catch (error: any) {
+            throw new Error(error.message || 'Erro ao fazer logout');
+        }
     },
 
     async changePassword(userId: string, oldPass: string, newPass: string): Promise<void> {
-        await delay(DELAY);
-        const users = getTable<User & {password?: string}>('mc_users_db');
-        const index = users.findIndex(u => u.id === userId);
-
-        if (index !== -1) {
-            if (users[index].password !== oldPass) throw new Error("Senha atual incorreta.");
-            users[index].password = newPass;
-            setTable('mc_users_db', users);
-        } else {
-            throw new Error("Usuário não encontrado.");
+        try {
+            throw new Error('Para alterar senha, use a funcionalidade do Firebase Auth');
+        } catch (error: any) {
+            throw error;
         }
     },
     
     async resetPassword(email: string, newPass: string): Promise<void> {
-         await delay(DELAY);
-         const users = getTable<User & {password?: string}>('mc_users_db');
-         const index = users.findIndex(u => u.email === email);
-         
-         if (index !== -1) {
-             users[index].password = newPass;
-             setTable('mc_users_db', users);
-         } else {
-             throw new Error("Email não encontrado.");
-         }
+        try {
+            throw new Error('Para resetar senha, use a funcionalidade do Firebase Auth');
+        } catch (error: any) {
+            throw error;
+        }
     },
 
     async deleteUser(userId: string): Promise<void> {
-        await delay(DELAY);
-        const users = getTable<User & {password?: string}>('mc_users_db');
-        const filteredUsers = users.filter(u => u.id !== userId);
-        setTable('mc_users_db', filteredUsers);
-        
-        removeTable(`mc_transactions_${userId}`);
-        removeTable(`mc_categories_${userId}`);
-        removeTable(`mc_banks_${userId}`);
-        removeTable(`mc_investments_${userId}`);
-        removeTable(`mc_subscriptions_${userId}`);
+        try {
+            // Deletar dados do Firestore
+            await deleteUserDataFromFirestore(userId);
+            // Deletar dados locais
+            removeTable(`mc_transactions_${userId}`);
+            removeTable(`mc_categories_${userId}`);
+            removeTable(`mc_banks_${userId}`);
+            removeTable(`mc_investments_${userId}`);
+            removeTable(`mc_subscriptions_${userId}`);
+        } catch (error: any) {
+            throw new Error(error.message || 'Erro ao deletar conta');
+        }
     }
 };
 
 export const DataService = {
     async getTransactions(userId: string): Promise<Transaction[]> {
         await delay(DELAY);
+        // Tentar carregar do Firestore primeiro
+        const firebaseData = await loadUserDataFromFirestore(userId, 'transactions');
+        if (firebaseData.length > 0) {
+            setTable(`mc_transactions_${userId}`, firebaseData);
+            return firebaseData;
+        }
+        // Fallback para localStorage
         return getTable<Transaction>(`mc_transactions_${userId}`);
     },
 
@@ -211,6 +274,8 @@ export const DataService = {
         const list = getTable<Transaction>(`mc_transactions_${userId}`);
         list.push(transaction);
         setTable(`mc_transactions_${userId}`, list);
+        // Salvar no Firestore
+        await saveUserDataToFirestore(userId, 'transactions', list);
         return transaction;
     },
 
@@ -219,6 +284,8 @@ export const DataService = {
         const list = getTable<Transaction>(`mc_transactions_${userId}`);
         const newList = [...list, ...transactions];
         setTable(`mc_transactions_${userId}`, newList);
+        // Salvar no Firestore
+        await saveUserDataToFirestore(userId, 'transactions', newList);
         return transactions;
     },
 
@@ -229,6 +296,8 @@ export const DataService = {
         if (index !== -1) {
             list[index] = transaction;
             setTable(`mc_transactions_${userId}`, list);
+            // Salvar no Firestore
+            await saveUserDataToFirestore(userId, 'transactions', list);
         }
         return transaction;
     },
@@ -238,10 +307,19 @@ export const DataService = {
         let list = getTable<Transaction>(`mc_transactions_${userId}`);
         list = list.filter(t => !ids.includes(t.id));
         setTable(`mc_transactions_${userId}`, list);
+        // Salvar no Firestore
+        await saveUserDataToFirestore(userId, 'transactions', list);
     },
 
     async getCategories(userId: string): Promise<Category[]> {
         await delay(DELAY);
+        // Tentar carregar do Firestore primeiro
+        const firebaseData = await loadUserDataFromFirestore(userId, 'categories');
+        if (firebaseData.length > 0) {
+            setTable(`mc_categories_${userId}`, firebaseData);
+            return firebaseData;
+        }
+        // Fallback para localStorage
         return getTable<Category>(`mc_categories_${userId}`);
     },
 
@@ -249,6 +327,8 @@ export const DataService = {
         const list = getTable<Category>(`mc_categories_${userId}`);
         list.push(category);
         setTable(`mc_categories_${userId}`, list);
+        // Salvar no Firestore
+        await saveUserDataToFirestore(userId, 'categories', list);
         return category;
     },
 
@@ -258,6 +338,8 @@ export const DataService = {
         if (index !== -1) {
             list[index] = category;
             setTable(`mc_categories_${userId}`, list);
+            // Salvar no Firestore
+            await saveUserDataToFirestore(userId, 'categories', list);
         }
         return category;
     },
@@ -266,10 +348,19 @@ export const DataService = {
         let list = getTable<Category>(`mc_categories_${userId}`);
         list = list.filter(c => c.id !== id);
         setTable(`mc_categories_${userId}`, list);
+        // Salvar no Firestore
+        await saveUserDataToFirestore(userId, 'categories', list);
     },
 
     async getBanks(userId: string): Promise<Bank[]> {
         await delay(DELAY);
+        // Tentar carregar do Firestore primeiro
+        const firebaseData = await loadUserDataFromFirestore(userId, 'banks');
+        if (firebaseData.length > 0) {
+            setTable(`mc_banks_${userId}`, firebaseData);
+            return firebaseData;
+        }
+        // Fallback para localStorage
         return getTable<Bank>(`mc_banks_${userId}`);
     },
 
@@ -282,6 +373,8 @@ export const DataService = {
             list.push(bank);
         }
         setTable(`mc_banks_${userId}`, list);
+        // Salvar no Firestore
+        await saveUserDataToFirestore(userId, 'banks', list);
         return bank;
     },
 
@@ -291,6 +384,8 @@ export const DataService = {
         if (index !== -1) {
             list[index].balance = newBalance;
             setTable(`mc_banks_${userId}`, list);
+            // Salvar no Firestore
+            await saveUserDataToFirestore(userId, 'banks', list);
         }
     },
     
@@ -301,16 +396,27 @@ export const DataService = {
              if (index !== -1) list[index].balance = u.balance;
         });
         setTable(`mc_banks_${userId}`, list);
+        // Salvar no Firestore
+        await saveUserDataToFirestore(userId, 'banks', list);
     },
 
     async deleteBank(userId: string, id: string): Promise<void> {
         let list = getTable<Bank>(`mc_banks_${userId}`);
         list = list.filter(b => b.id !== id);
         setTable(`mc_banks_${userId}`, list);
+        // Salvar no Firestore
+        await saveUserDataToFirestore(userId, 'banks', list);
     },
 
     async getInvestments(userId: string): Promise<Investment[]> {
         await delay(DELAY);
+        // Tentar carregar do Firestore primeiro
+        const firebaseData = await loadUserDataFromFirestore(userId, 'investments');
+        if (firebaseData.length > 0) {
+            setTable(`mc_investments_${userId}`, firebaseData);
+            return firebaseData;
+        }
+        // Fallback para localStorage
         return getTable<Investment>(`mc_investments_${userId}`);
     },
 
@@ -323,6 +429,8 @@ export const DataService = {
             list.push(investment);
         }
         setTable(`mc_investments_${userId}`, list);
+        // Salvar no Firestore
+        await saveUserDataToFirestore(userId, 'investments', list);
         return investment;
     },
 
@@ -330,10 +438,19 @@ export const DataService = {
         let list = getTable<Investment>(`mc_investments_${userId}`);
         list = list.filter(i => i.id !== id);
         setTable(`mc_investments_${userId}`, list);
+        // Salvar no Firestore
+        await saveUserDataToFirestore(userId, 'investments', list);
     },
 
     async getSubscriptions(userId: string): Promise<Subscription[]> {
         await delay(DELAY);
+        // Tentar carregar do Firestore primeiro
+        const firebaseData = await loadUserDataFromFirestore(userId, 'subscriptions');
+        if (firebaseData.length > 0) {
+            setTable(`mc_subscriptions_${userId}`, firebaseData);
+            return firebaseData;
+        }
+        // Fallback para localStorage
         return getTable<Subscription>(`mc_subscriptions_${userId}`);
     },
 
@@ -346,6 +463,8 @@ export const DataService = {
             list.push(subscription);
         }
         setTable(`mc_subscriptions_${userId}`, list);
+        // Salvar no Firestore
+        await saveUserDataToFirestore(userId, 'subscriptions', list);
         return subscription;
     },
 
@@ -353,5 +472,7 @@ export const DataService = {
         let list = getTable<Subscription>(`mc_subscriptions_${userId}`);
         list = list.filter(s => s.id !== id);
         setTable(`mc_subscriptions_${userId}`, list);
+        // Salvar no Firestore
+        await saveUserDataToFirestore(userId, 'subscriptions', list);
     }
 };
