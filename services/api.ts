@@ -5,7 +5,7 @@ import { db, auth } from '../src/services/firebase';
 import { doc, setDoc, getDoc, collection, getDocs, query, where, deleteDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 
-const DELAY = 400;
+const DELAY = 50;
 export const TEST_USER_EMAIL = 'teste@exemplo.com';
 export const SYSTEM_CATEGORY_ID = 'system_internal';
 
@@ -283,7 +283,7 @@ export const DataService = {
     },
 
     async createTransaction(userId: string, transaction: Transaction): Promise<Transaction> {
-        await delay(100);
+        await delay(50);
         const list = getTable<Transaction>(`mc_transactions_${userId}`);
         list.push(transaction);
         setTable(`mc_transactions_${userId}`, list);
@@ -293,7 +293,7 @@ export const DataService = {
     },
 
     async createTransactionsBatch(userId: string, transactions: Transaction[]): Promise<Transaction[]> {
-        await delay(200);
+        await delay(50);
         const list = getTable<Transaction>(`mc_transactions_${userId}`);
         const newList = [...list, ...transactions];
         setTable(`mc_transactions_${userId}`, newList);
@@ -303,7 +303,7 @@ export const DataService = {
     },
 
     async updateTransaction(userId: string, transaction: Transaction): Promise<Transaction> {
-        await delay(100);
+        await delay(50);
         const list = getTable<Transaction>(`mc_transactions_${userId}`);
         const index = list.findIndex(t => t.id === transaction.id);
         if (index !== -1) {
@@ -316,7 +316,7 @@ export const DataService = {
     },
 
     async deleteTransactions(userId: string, ids: string[]): Promise<void> {
-        await delay(100);
+        await delay(50);
         let list = getTable<Transaction>(`mc_transactions_${userId}`);
         list = list.filter(t => !ids.includes(t.id));
         setTable(`mc_transactions_${userId}`, list);

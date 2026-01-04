@@ -8,7 +8,7 @@ import { CreditCardsModule, BanksModule, CategoriesModule, InvestmentsModule } f
 import { AlertTriangle, User, Mail, Moon, Sun, LogOut, Save, HeartPulse, ChevronRight, Camera, Trash2, Settings, X, Lock, Key, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { SINOP_TIMEZONE } from './utils';
 import { TEST_USER_EMAIL } from './services/api';
-import logoImg from './logo/pngwing.com.png';
+import logoImg from './logo/logo.png';
 
 interface ErrorBoundaryProps {
   children?: React.ReactNode;

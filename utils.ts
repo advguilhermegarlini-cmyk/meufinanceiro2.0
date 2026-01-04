@@ -11,7 +11,6 @@ export const formatCurrency = (amount: number) => {
 
 export const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('pt-BR', {
-    timeZone: SINOP_TIMEZONE,
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -20,7 +19,6 @@ export const formatDate = (dateString: string) => {
 
 export const formatDateTime = (dateString: string) => {
   return new Date(dateString).toLocaleString('pt-BR', {
-    timeZone: SINOP_TIMEZONE,
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

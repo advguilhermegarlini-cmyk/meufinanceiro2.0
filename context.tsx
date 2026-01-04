@@ -23,6 +23,8 @@ interface AppContextType {
   
   isTransactionModalOpen: boolean;
   setTransactionModalOpen: (open: boolean) => void;
+  editingTransaction: Transaction | null;
+  setEditingTransaction: (t: Transaction | null) => void;
 
   login: (email: string, password?: string) => Promise<void>;
   register: (name: string, email: string, password?: string) => Promise<void>;
@@ -86,6 +88,7 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [healthThresholds, setHealthThresholds] = useState<HealthThresholds>(DEFAULT_THRESHOLDS);
   const [isTransactionModalOpen, setTransactionModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -218,6 +221,8 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     const newTxList: Transaction[] = [];
     const bankUpdates: {id: string, balance: number}[] = [];
     
+    // ... lógica existente para criar newTxList e bankUpdates ...
+
     if (t.type === 'transfer' && t.toBankId) {
        const transferTx: Transaction = { ...t, id: generateId(), categoryId: SYSTEM_CATEGORY_ID };
        newTxList.push(transferTx);
@@ -280,15 +285,20 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
       }
     }
 
-    await DataService.createTransactionsBatch(user.id, newTxList);
-    if (bankUpdates.length > 0) await DataService.updateBankBalances(user.id, bankUpdates);
+    try {
+      await DataService.createTransactionsBatch(user.id, newTxList);
+      if (bankUpdates.length > 0) await DataService.updateBankBalances(user.id, bankUpdates);
 
-    setTransactions(prev => [...newTxList, ...prev]);
-    if (bankUpdates.length > 0) {
-        setBanks(prev => prev.map(b => {
-            const update = bankUpdates.find(u => u.id === b.id);
-            return update ? { ...b, balance: update.balance } : b;
-        }));
+      setTransactions(prev => [...newTxList, ...prev]);
+      if (bankUpdates.length > 0) {
+          setBanks(prev => prev.map(b => {
+              const update = bankUpdates.find(u => u.id === b.id);
+              return update ? { ...b, balance: update.balance } : b;
+          }));
+      }
+    } catch (error) {
+      console.error('Erro ao salvar transação:', error);
+      throw error; // Re-throw para que o componente possa tratar
     }
   };
 
@@ -308,6 +318,24 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
 
     const txsToDelete = transactions.filter(t => idsToDelete.includes(t.id));
     let tempBanks = [...banks];
+    let tempInvestments = [...investments];
+
+    // Ajustar investimentos se necessário
+    txsToDelete.forEach(curr => {
+        if (curr.type === 'transfer' && curr.description.startsWith('Aporte: ')) {
+            const invName = curr.description.replace('Aporte: ', '');
+            const inv = tempInvestments.find(i => i.name === invName);
+            if (inv) {
+                inv.principal = Math.max(0, (inv.principal || 0) - curr.amount);
+            }
+        } else if (curr.type === 'transfer' && curr.description.startsWith('Resgate: ')) {
+            const invName = curr.description.replace('Resgate: ', '');
+            const inv = tempInvestments.find(i => i.name === invName);
+            if (inv) {
+                inv.principal = (inv.principal || 0) + curr.amount;
+            }
+        }
+    });
     let txsToUpdate: Transaction[] = [];
 
     txsToDelete.forEach(curr => {
@@ -336,6 +364,11 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
         return original && original.balance !== tb.balance;
     });
     if(changedBanks.length > 0) await DataService.updateBankBalances(user.id, changedBanks.map(b => ({id: b.id, balance: b.balance})));
+    const changedInvestments = tempInvestments.filter(ti => {
+        const original = investments.find(i => i.id === ti.id);
+        return original && original.principal !== ti.principal;
+    });
+    for (const inv of changedInvestments) await DataService.saveInvestment(user.id, inv);
     for (const t of txsToUpdate) await DataService.updateTransaction(user.id, t);
 
     setTransactions(prev => {
@@ -346,12 +379,83 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
         });
     });
     setBanks(tempBanks);
+    setInvestments(tempInvestments);
   };
 
   const updateTransaction = async (t: Transaction) => {
     if(!user) return;
+    const original = transactions.find(tx => tx.id === t.id);
+    if (!original) return;
+
+    let tempBanks = [...banks];
+    let tempInvestments = [...investments];
+
+    // Ajustar investimentos se necessário
+    if (original.type === 'transfer' && original.description.startsWith('Aporte: ')) {
+        const invName = original.description.replace('Aporte: ', '');
+        const inv = tempInvestments.find(i => i.name === invName);
+        if (inv) {
+            inv.principal = Math.max(0, (inv.principal || 0) - original.amount);
+        }
+    } else if (original.type === 'transfer' && original.description.startsWith('Resgate: ')) {
+        const invName = original.description.replace('Resgate: ', '');
+        const inv = tempInvestments.find(i => i.name === invName);
+        if (inv) {
+            inv.principal = (inv.principal || 0) + original.amount;
+        }
+    }
+
+    if (t.type === 'transfer' && t.description.startsWith('Aporte: ')) {
+        const invName = t.description.replace('Aporte: ', '');
+        const inv = tempInvestments.find(i => i.name === invName);
+        if (inv) {
+            inv.principal = (inv.principal || 0) + t.amount;
+        }
+    } else if (t.type === 'transfer' && t.description.startsWith('Resgate: ')) {
+        const invName = t.description.replace('Resgate: ', '');
+        const inv = tempInvestments.find(i => i.name === invName);
+        if (inv) {
+            inv.principal = Math.max(0, (inv.principal || 0) - t.amount);
+        }
+    }
+
+    // Reverter efeito da transação original
+    if (original.type === 'transfer' && original.toBankId) {
+      const sIdx = tempBanks.findIndex(b => b.id === original.bankId);
+      const dIdx = tempBanks.findIndex(b => b.id === original.toBankId);
+      if(sIdx > -1) tempBanks[sIdx].balance = (tempBanks[sIdx].balance || 0) + original.amount;
+      if(dIdx > -1) tempBanks[dIdx].balance = (tempBanks[dIdx].balance || 0) - original.amount;
+    } else if (!original.isCreditCard && !original.isInvoicePayment) {
+      const idx = tempBanks.findIndex(b => b.id === original.bankId);
+      if(idx > -1) tempBanks[idx].balance = (tempBanks[idx].balance || 0) + (original.amount * (original.type === 'income' ? -1 : 1));
+    }
+
+    // Aplicar efeito da nova transação
+    if (t.type === 'transfer' && t.toBankId) {
+      const sIdx = tempBanks.findIndex(b => b.id === t.bankId);
+      const dIdx = tempBanks.findIndex(b => b.id === t.toBankId);
+      if(sIdx > -1) tempBanks[sIdx].balance = (tempBanks[sIdx].balance || 0) - t.amount;
+      if(dIdx > -1) tempBanks[dIdx].balance = (tempBanks[dIdx].balance || 0) + t.amount;
+    } else if (!t.isCreditCard && !t.isInvoicePayment) {
+      const idx = tempBanks.findIndex(b => b.id === t.bankId);
+      if(idx > -1) tempBanks[idx].balance = (tempBanks[idx].balance || 0) + (t.amount * (t.type === 'income' ? 1 : -1));
+    }
+
     await DataService.updateTransaction(user.id, t);
+    const changedBanks = tempBanks.filter(tb => {
+      const originalBank = banks.find(b => b.id === tb.id);
+      return originalBank && originalBank.balance !== tb.balance;
+    });
+    if(changedBanks.length > 0) await DataService.updateBankBalances(user.id, changedBanks.map(b => ({id: b.id, balance: b.balance})));
+    const changedInvestments = tempInvestments.filter(ti => {
+      const original = investments.find(i => i.id === ti.id);
+      return original && original.principal !== ti.principal;
+    });
+    for (const inv of changedInvestments) await DataService.saveInvestment(user.id, inv);
+
     setTransactions(prev => prev.map(curr => curr.id === t.id ? t : curr));
+    setBanks(tempBanks);
+    setInvestments(tempInvestments);
   };
 
   const chargebackTransaction = async (item: string | Transaction) => {
@@ -671,7 +775,7 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     });
     
     const income = monthTx.filter(t => t.type === 'income').reduce((acc, t) => acc + (t.amount || 0), 0);
-    const expenses = monthTx.filter(t => t.type === 'expense' && !t.isCreditCard).reduce((acc, t) => acc + (t.amount || 0), 0);
+    const expenses = monthTx.filter(t => t.type === 'expense').reduce((acc, t) => acc + (t.amount || 0), 0);
     const totalInvested = investments ? investments.reduce((acc, inv) => acc + (inv.principal || 0), 0) : 0;
     
     const creditCardBill = (banks && banks.length > 0) ? banks.filter(b => b.type === 'credit').reduce((acc, card) => {
@@ -698,7 +802,8 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
       addSubscription, updateSubscription, deleteSubscription,
       getDashboardStats, getBankBalanceAtDate, getOverallBalanceAtDate, getInvoiceStats,
       healthThresholds, updateHealthThresholds,
-      isTransactionModalOpen, setTransactionModalOpen
+      isTransactionModalOpen, setTransactionModalOpen,
+      editingTransaction, setEditingTransaction
     }}>
       {children}
     </AppContext.Provider>

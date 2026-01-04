@@ -108,3 +108,18 @@ export interface DashboardStats {
   investments: number;
   creditCardBill: number;
 }
+
+// Declarações para elementos JSX do React Three Fiber
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      group: any;
+      mesh: any;
+      extrudeGeometry: any;
+      meshPhysicalMaterial: any;
+      ambientLight: any;
+      spotLight: any;
+      pointLight: any;
+    }
+  }
+}

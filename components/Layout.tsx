@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { SINOP_TIMEZONE } from '../utils';
 import { TransactionFormModal } from './TransactionFormModal';
-import logoImg from '../logo/pngwing.com.png';
+import logoImg from '../logo/logo.png';
 
 export const Card: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ children, className = '', ...props }) => (
   <div className={`bg-github-surface border border-github-border rounded-2xl shadow-sm transition-all ${className}`} {...props}>
@@ -59,7 +59,7 @@ export const Layout = ({ children, activeTab, setActiveTab }: {
   activeTab: string, 
   setActiveTab: (t: string) => void 
 }) => {
-  const { user, logout, theme, toggleTheme, isTransactionModalOpen, setTransactionModalOpen } = useApp();
+  const { user, logout, theme, toggleTheme, isTransactionModalOpen, setTransactionModalOpen, editingTransaction, setEditingTransaction } = useApp();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -190,7 +190,7 @@ export const Layout = ({ children, activeTab, setActiveTab }: {
         <Plus size={32} />
       </button>
 
-      <TransactionFormModal isOpen={isTransactionModalOpen} onClose={() => setTransactionModalOpen(false)} />
+      <TransactionFormModal isOpen={isTransactionModalOpen} onClose={() => { setTransactionModalOpen(false); setEditingTransaction(null); }} editingTransaction={editingTransaction} />
     </div>
   );
 };

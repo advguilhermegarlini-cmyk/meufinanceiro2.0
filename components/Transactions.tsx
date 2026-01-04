@@ -2,12 +2,12 @@
 import React, { useState } from 'react';
 import { useApp } from '../context';
 import { Card, Button } from './Layout';
-import { formatCurrency, formatDate } from '../utils';
-import { Plus, Trash2, Search, ArrowRightLeft, CreditCard, ChevronLeft, ChevronRight, AlertTriangle, Wallet, Calendar, Tag, Undo2 } from 'lucide-react';
+import { formatCurrency, formatDate, formatDateTime } from '../utils';
+import { Plus, Trash2, Search, ArrowRightLeft, CreditCard, ChevronLeft, ChevronRight, AlertTriangle, Wallet, Tag, Undo2, Edit2 } from 'lucide-react';
 import { TransactionType, Transaction } from '../types';
 
 export const Transactions = () => {
-  const { transactions, categories, banks, deleteTransaction, chargebackTransaction, selectedDate, setTransactionModalOpen } = useApp();
+  const { transactions, categories, banks, deleteTransaction, chargebackTransaction, setTransactionModalOpen, setEditingTransaction } = useApp();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<TransactionType | 'all'>('all');
@@ -55,6 +55,9 @@ export const Transactions = () => {
     return matchSearch && matchType && matchMonth;
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+  const filteredNormal = filtered.filter(t => !t.isCreditCard);
+  const filteredCreditCard = filtered.filter(t => t.isCreditCard);
+
   return (
     <div className="space-y-6 pb-20 md:pb-8">
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -73,7 +76,7 @@ export const Transactions = () => {
         </div>
         
         <div className="flex gap-2 w-full md:w-auto">
-            <Button onClick={() => setTransactionModalOpen(true)} variant="primary" className="flex-1 md:flex-none px-8 py-3 rounded-2xl shadow-xl shadow-github-success/10"><Plus size={20} /> Nova Transação</Button>
+            <Button onClick={() => { setEditingTransaction(null); setTransactionModalOpen(true); }} variant="primary" className="flex-1 md:flex-none px-8 py-3 rounded-2xl shadow-xl shadow-github-success/10"><Plus size={20} /> Nova Transação</Button>
         </div>
       </div>
 
@@ -90,73 +93,152 @@ export const Transactions = () => {
         </select>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filtered.map(t => {
-          const cat = categories.find(c => c.id === t.categoryId);
-          const bank = banks.find(b => b.id === t.bankId);
-          const toBank = banks.find(b => b.id === t.toBankId);
-          const isExp = t.type === 'expense';
-          const isInc = t.type === 'income';
-          const isTrans = t.type === 'transfer';
-          
-          return (
-            <Card key={t.id} className={`p-5 hover:border-github-primary transition-all group border-l-8 ${
-                isTrans ? 'border-l-github-primary' : (isInc ? 'border-l-github-success' : 'border-l-github-danger')
-            }`}>
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-[10px] font-black uppercase text-github-muted bg-github-bg px-2 py-0.5 rounded-lg border border-github-border">{formatDate(t.date)}</span>
-                    {t.isCreditCard && <CreditCard size={12} className="text-github-purple" />}
-                    {t.isChargeback && <Undo2 size={12} className="text-github-success" />}
-                  </div>
-                  <h3 className="font-bold text-github-text truncate pr-6">
-                    {t.description}
-                    {t.installments && t.installments > 1 && (
-                      <span className="ml-2 text-[9px] font-black bg-github-surface px-1.5 py-0.5 rounded-lg border border-github-border text-github-purple">
-                        {t.installmentNumber}/{t.installments}
-                      </span>
-                    )}
-                  </h3>
-                </div>
-                <div className="text-right">
-                  <p className={`font-mono text-lg font-black ${isInc ? 'text-github-success' : (isExp ? 'text-github-danger' : 'text-github-text')}`}>
-                    {isInc ? '+' : (isExp ? '-' : '')}{formatCurrency(t.amount)}
-                  </p>
-                </div>
-              </div>
+      {/* Lançamentos Normais */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <Wallet size={20} className="text-github-primary" />
+          <h3 className="text-lg font-black text-github-text uppercase tracking-tighter">Lançamentos em Contas</h3>
+          <div className="flex-1 h-px bg-github-border"></div>
+        </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex gap-2">
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-github-bg border border-github-border rounded-xl">
-                        <Tag size={10} style={{ color: cat?.color || 'gray' }} />
-                        <span className="text-[10px] font-bold uppercase tracking-tighter text-github-text">{cat?.name || 'Sistema'}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filteredNormal.map(t => {
+            const cat = categories.find(c => c.id === t.categoryId);
+            const bank = banks.find(b => b.id === t.bankId);
+            const toBank = banks.find(b => b.id === t.toBankId);
+            const isExp = t.type === 'expense';
+            const isInc = t.type === 'income';
+            const isTrans = t.type === 'transfer';
+            
+            return (
+              <Card key={t.id} className={`p-5 hover:border-github-primary transition-all group border-l-8 ${
+                  isTrans ? 'border-l-github-primary' : (isInc ? 'border-l-github-success' : 'border-l-github-danger')
+              }`}>
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-[10px] font-black uppercase text-github-muted bg-github-bg px-2 py-0.5 rounded-lg border border-github-border">{formatDateTime(t.date)}</span>
+                      {t.isChargeback && <Undo2 size={12} className="text-github-success" />}
                     </div>
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-github-bg border border-github-border rounded-xl">
-                        <Wallet size={10} className="text-github-muted" />
-                        <span className="text-[10px] font-bold uppercase tracking-tighter text-github-muted">
-                            {bank?.name} {isTrans && toBank && <><ArrowRightLeft size={8} className="mx-1"/> {toBank.name}</>}
-                        </span>
-                    </div>
+                    <h3 className="font-bold text-github-text truncate pr-6">
+                      {t.description}
+                    </h3>
+                  </div>
+                  <div className="text-right">
+                    <p className={`font-mono text-lg font-black ${isInc ? 'text-github-success' : (isExp ? 'text-github-danger' : 'text-github-text')}`}>
+                      {isInc ? '+' : (isExp ? '-' : '')}{formatCurrency(t.amount)}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {t.isCreditCard && !t.isChargeback && (
-                        <button onClick={() => handleChargeback(t)} className="p-2 text-github-muted hover:text-github-success bg-github-bg rounded-lg transition-colors"><Undo2 size={14} /></button>
-                    )}
-                    <button onClick={() => handleDeleteRequest(t)} className="p-2 text-github-muted hover:text-github-danger bg-github-bg rounded-lg transition-colors"><Trash2 size={14} /></button>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-2">
+                      <div className="flex items-center gap-1.5 px-2 py-1 bg-github-bg border border-github-border rounded-xl">
+                          <Tag size={10} style={{ color: cat?.color || 'gray' }} />
+                          <span className="text-[10px] font-bold uppercase tracking-tighter text-github-text">{cat?.name || 'Sistema'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 px-2 py-1 bg-github-bg border border-github-border rounded-xl">
+                          <Wallet size={10} className="text-github-muted" />
+                          <span className="text-[10px] font-bold uppercase tracking-tighter text-github-muted">
+                              {bank?.name} {isTrans && toBank && <><ArrowRightLeft size={8} className="mx-1"/> {toBank.name}</>}
+                          </span>
+                      </div>
+                  </div>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => { setEditingTransaction(t); setTransactionModalOpen(true); }} className="p-2 text-github-muted hover:text-github-primary bg-github-bg rounded-lg transition-colors"><Edit2 size={14} /></button>
+                      <button onClick={() => handleDeleteRequest(t)} className="p-2 text-github-muted hover:text-github-danger bg-github-bg rounded-lg transition-colors"><Trash2 size={14} /></button>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          );
-        })}
+              </Card>
+            );
+          })}
+        </div>
+
+        {filteredNormal.length === 0 && (
+          <Card className="p-20 text-center border-dashed border-2 border-github-border bg-transparent">
+            <Wallet size={48} className="mx-auto mb-4 text-github-muted opacity-20" />
+            <p className="font-black uppercase tracking-widest text-github-muted">Nenhum lançamento em contas neste mês</p>
+          </Card>
+        )}
       </div>
 
-      {filtered.length === 0 && (
-        <Card className="p-20 text-center border-dashed border-2 border-github-border bg-transparent">
-          <Calendar size={48} className="mx-auto mb-4 text-github-muted opacity-20" />
-          <p className="font-black uppercase tracking-widest text-github-muted">Nenhum lançamento neste mês</p>
-        </Card>
-      )}
+      {/* Lançamentos do Cartão de Crédito */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <CreditCard size={20} className="text-github-purple" />
+          <h3 className="text-lg font-black text-github-text uppercase tracking-tighter">Lançamentos no Cartão de Crédito</h3>
+          <div className="flex-1 h-px bg-github-border"></div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filteredCreditCard.map(t => {
+            const cat = categories.find(c => c.id === t.categoryId);
+            const bank = banks.find(b => b.id === t.bankId);
+            const toBank = banks.find(b => b.id === t.toBankId);
+            const isExp = t.type === 'expense';
+            const isInc = t.type === 'income';
+            const isTrans = t.type === 'transfer';
+            
+            return (
+              <Card key={t.id} className={`p-5 hover:border-github-primary transition-all group border-l-8 ${
+                  isTrans ? 'border-l-github-primary' : (isInc ? 'border-l-github-success' : 'border-l-github-danger')
+              }`}>
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-[10px] font-black uppercase text-github-muted bg-github-bg px-2 py-0.5 rounded-lg border border-github-border">{formatDateTime(t.date)}</span>
+                      <CreditCard size={12} className="text-github-purple" />
+                      {t.isChargeback && <Undo2 size={12} className="text-github-success" />}
+                      {t.installments && t.installments > 1 && (
+                        <span className="text-[9px] font-black bg-github-surface px-1.5 py-0.5 rounded-lg border border-github-border text-github-purple">
+                          {t.installmentNumber}/{t.installments}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-bold text-github-text truncate pr-6">
+                      {t.description}
+                    </h3>
+                  </div>
+                  <div className="text-right">
+                    <p className={`font-mono text-lg font-black ${isInc ? 'text-github-success' : (isExp ? 'text-github-danger' : 'text-github-text')}`}>
+                      {isInc ? '+' : (isExp ? '-' : '')}{formatCurrency(t.amount)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-2">
+                      <div className="flex items-center gap-1.5 px-2 py-1 bg-github-bg border border-github-border rounded-xl">
+                          <Tag size={10} style={{ color: cat?.color || 'gray' }} />
+                          <span className="text-[10px] font-bold uppercase tracking-tighter text-github-text">{cat?.name || 'Sistema'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 px-2 py-1 bg-github-bg border border-github-border rounded-xl">
+                          <Wallet size={10} className="text-github-muted" />
+                          <span className="text-[10px] font-bold uppercase tracking-tighter text-github-muted">
+                              {bank?.name} {isTrans && toBank && <><ArrowRightLeft size={8} className="mx-1"/> {toBank.name}</>}
+                          </span>
+                      </div>
+                  </div>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => { setEditingTransaction(t); setTransactionModalOpen(true); }} className="p-2 text-github-muted hover:text-github-primary bg-github-bg rounded-lg transition-colors"><Edit2 size={14} /></button>
+                      {!t.isChargeback && (
+                          <button onClick={() => handleChargeback(t)} className="p-2 text-github-muted hover:text-github-success bg-github-bg rounded-lg transition-colors"><Undo2 size={14} /></button>
+                      )}
+                      <button onClick={() => handleDeleteRequest(t)} className="p-2 text-github-muted hover:text-github-danger bg-github-bg rounded-lg transition-colors"><Trash2 size={14} /></button>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+
+        {filteredCreditCard.length === 0 && (
+          <Card className="p-20 text-center border-dashed border-2 border-github-border bg-transparent">
+            <CreditCard size={48} className="mx-auto mb-4 text-github-muted opacity-20" />
+            <p className="font-black uppercase tracking-widest text-github-muted">Nenhum lançamento no cartão neste mês</p>
+          </Card>
+        )}
+      </div>
 
       {deleteModal.show && (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[200] p-4 backdrop-blur-md">

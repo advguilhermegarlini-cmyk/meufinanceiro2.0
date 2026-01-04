@@ -7,9 +7,9 @@ import { useApp } from '../context';
 import { Card } from './Layout';
 import { formatCurrency, sortByNameIgnoreAccents } from '../utils';
 import { 
-  TrendingUp, TrendingDown, DollarSign, CreditCard, Activity, CheckCircle2, AlertCircle, Smartphone, Clock, Droplets, PieChart, Loader2
+  TrendingUp, TrendingDown, DollarSign, CreditCard, Activity, CheckCircle2, AlertCircle, Smartphone, Clock, Droplets, PieChart, Loader2, ChevronLeft, ChevronRight
 } from 'lucide-react';
-import logoImg from '../logo/pngwing.com.png';
+import logoImg from '../logo/logo.png';
 
 interface Slice3DProps {
   startAngle: number;
@@ -337,7 +337,8 @@ const HealthThermometer = () => {
 export const Dashboard = () => {
   const { transactions, getDashboardStats, getOverallBalanceAtDate, categories, isLoading } = useApp();
   const today = useMemo(() => new Date(), []);
-  const stats = useMemo(() => getDashboardStats(today), [getDashboardStats, today, transactions]);
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const stats = useMemo(() => getDashboardStats(selectedMonth), [getDashboardStats, selectedMonth, transactions]);
   const currentTotalBalance = getOverallBalanceAtDate(today) || 0;
   const [threeLoaded, setThreeLoaded] = useState(false);
 
@@ -366,13 +367,13 @@ export const Dashboard = () => {
             const tDate = new Date(t.date);
             if (isNaN(tDate.getTime())) return false;
             return t.categoryId === cat.id && 
-                   tDate.getUTCMonth() === today.getUTCMonth() && 
-                   tDate.getUTCFullYear() === today.getUTCFullYear();
+                   tDate.getUTCMonth() === selectedMonth.getUTCMonth() && 
+                   tDate.getUTCFullYear() === selectedMonth.getUTCFullYear();
         })
         .reduce((acc, t) => acc + (t.amount || 0), 0);
       return { name: cat.name, value: total, color: cat.color };
     }).filter(d => d.value > 0);
-  }, [categories, transactions, today]);
+  }, [categories, transactions, selectedMonth]);
 
   if (isLoading) {
     return (
@@ -390,9 +391,17 @@ export const Dashboard = () => {
         <div className="h-16 w-16 flex-shrink-0">
           <img src={logoImg} alt="Logo" className="h-full w-full object-contain" />
         </div>
-        <div>
+        <div className="flex-1">
           <h2 className="text-2xl font-black text-github-text uppercase tracking-tighter">Dashboard</h2>
           <p className="text-xs text-github-muted font-medium">Bem-vindo de volta ao seu controle financeiro</p>
+        </div>
+        <div className="flex items-center bg-github-surface border border-github-border rounded-2xl p-1 shadow-sm">
+          <button onClick={() => setSelectedMonth(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() - 1, 1))} className="p-2 hover:bg-github-border rounded-lg text-github-muted transition-all"><ChevronLeft size={20} /></button>
+          <div className="relative px-4 text-center group cursor-pointer">
+             <span className="text-sm font-black uppercase tracking-tighter block w-32 text-github-text">{selectedMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</span>
+             <input type="month" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => { if (e.target.value) { const [year, month] = e.target.value.split('-'); setSelectedMonth(new Date(parseInt(year), parseInt(month) - 1, 1)); } }} value={`${selectedMonth.getFullYear()}-${String(selectedMonth.getMonth() + 1).padStart(2, '0')}`} />
+          </div>
+          <button onClick={() => setSelectedMonth(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1))} className="p-2 hover:bg-github-border rounded-lg text-github-muted transition-all"><ChevronRight size={20} /></button>
         </div>
       </div>
       
