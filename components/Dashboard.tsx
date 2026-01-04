@@ -7,7 +7,7 @@ import { useApp } from '../context';
 import { Card } from './Layout';
 import { formatCurrency, sortByNameIgnoreAccents } from '../utils';
 import { 
-  TrendingUp, TrendingDown, DollarSign, CreditCard, Activity, CheckCircle2, AlertCircle, Smartphone, Clock, Droplets, PieChart, Loader2, ChevronLeft, ChevronRight
+  TrendingUp, TrendingDown, DollarSign, CreditCard, Activity, CheckCircle2, AlertCircle, Smartphone, Clock, Droplets, PieChart, Loader2, ChevronLeft, ChevronRight, ArrowUpCircle, ArrowDownCircle
 } from 'lucide-react';
 import logoImg from '../logo/logo.png';
 
@@ -335,7 +335,7 @@ const HealthThermometer = () => {
 };
 
 export const Dashboard = () => {
-  const { transactions, getDashboardStats, getOverallBalanceAtDate, categories, isLoading } = useApp();
+  const { transactions, getDashboardStats, getOverallBalanceAtDate, categories, isLoading, fixedIncomes, fixedExpenses } = useApp();
   const today = useMemo(() => new Date(), []);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const stats = useMemo(() => getDashboardStats(selectedMonth), [getDashboardStats, selectedMonth, transactions]);
@@ -407,44 +407,70 @@ export const Dashboard = () => {
       
       <HealthThermometer />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4 flex items-center space-x-4 border-b-2 border-github-success">
-          <div className="p-3 bg-github-success/10 text-github-success rounded-xl">
-            <TrendingUp size={24} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+        <Card className="p-3 md:p-4 flex items-center space-x-2 md:space-x-4 border-b-2 border-github-success min-w-0">
+          <div className="p-2 md:p-3 bg-github-success/10 text-github-success rounded-xl flex-shrink-0">
+            <TrendingUp size={16} className="md:hidden" />
+            <TrendingUp size={22} className="hidden md:block" />
           </div>
-          <div>
-            <p className="text-[10px] text-github-muted font-black uppercase tracking-wider">Entradas (Mês)</p>
-            <p className="text-xl font-bold">{formatCurrency(stats.income || 0)}</p>
-          </div>
-        </Card>
-
-        <Card className="p-4 flex items-center space-x-4 border-b-2 border-github-danger">
-          <div className="p-3 bg-github-danger/10 text-github-danger rounded-xl">
-            <TrendingDown size={24} />
-          </div>
-          <div>
-            <p className="text-[10px] text-github-muted font-black uppercase tracking-wider">Saídas (Mês)</p>
-            <p className="text-xl font-bold">{formatCurrency(stats.expenses || 0)}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-[8px] md:text-[10px] text-github-muted font-black uppercase tracking-wider truncate">Entradas (Mês)</p>
+            <p className="text-base md:text-xl font-bold truncate">{formatCurrency(stats.income || 0)}</p>
           </div>
         </Card>
 
-        <Card className="p-4 flex items-center space-x-4 border-b-2 border-github-primary">
-          <div className="p-3 bg-github-primary/10 text-github-primary rounded-xl">
-            <DollarSign size={24} />
+        <Card className="p-3 md:p-4 flex items-center space-x-2 md:space-x-4 border-b-2 border-github-danger min-w-0">
+          <div className="p-2 md:p-3 bg-github-danger/10 text-github-danger rounded-xl flex-shrink-0">
+            <TrendingDown size={16} className="md:hidden" />
+            <TrendingDown size={22} className="hidden md:block" />
           </div>
-          <div>
-            <p className="text-[10px] text-github-muted font-black uppercase tracking-wider">Total em Contas</p>
-            <p className="text-xl font-bold">{formatCurrency(currentTotalBalance || 0)}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-[8px] md:text-[10px] text-github-muted font-black uppercase tracking-wider truncate">Saídas (Mês)</p>
+            <p className="text-base md:text-xl font-bold truncate">{formatCurrency(stats.expenses || 0)}</p>
           </div>
         </Card>
 
-        <Card className="p-4 flex items-center space-x-4 border-b-2 border-github-purple">
-          <div className="p-3 bg-github-purple/10 text-github-purple rounded-xl">
-            <CreditCard size={24} />
+        <Card className="p-3 md:p-4 flex items-center space-x-2 md:space-x-4 border-b-2 border-github-primary min-w-0">
+          <div className="p-2 md:p-3 bg-github-primary/10 text-github-primary rounded-xl flex-shrink-0">
+            <DollarSign size={16} className="md:hidden" />
+            <DollarSign size={22} className="hidden md:block" />
           </div>
-          <div>
-            <p className="text-[10px] text-github-muted font-black uppercase tracking-wider">Faturas do Mês</p>
-            <p className="text-xl font-bold">{formatCurrency(stats.creditCardBill || 0)}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-[8px] md:text-[10px] text-github-muted font-black uppercase tracking-wider truncate">Total em Contas</p>
+            <p className="text-base md:text-xl font-bold truncate">{formatCurrency(currentTotalBalance || 0)}</p>
+          </div>
+        </Card>
+
+        <Card className="p-3 md:p-4 flex items-center space-x-2 md:space-x-4 border-b-2 border-github-purple min-w-0">
+          <div className="p-2 md:p-3 bg-github-purple/10 text-github-purple rounded-xl flex-shrink-0">
+            <CreditCard size={16} className="md:hidden" />
+            <CreditCard size={22} className="hidden md:block" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[8px] md:text-[10px] text-github-muted font-black uppercase tracking-wider truncate">Faturas do Mês</p>
+            <p className="text-base md:text-xl font-bold truncate">{formatCurrency(stats.creditCardBill || 0)}</p>
+          </div>
+        </Card>
+
+        <Card className="p-3 md:p-4 flex items-center space-x-2 md:space-x-4 border-b-2 border-github-success min-w-0">
+          <div className="p-2 md:p-3 bg-github-success/10 text-github-success rounded-xl flex-shrink-0">
+            <ArrowUpCircle size={16} className="md:hidden" />
+            <ArrowUpCircle size={22} className="hidden md:block" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[8px] md:text-[10px] text-github-muted font-black uppercase tracking-wider truncate">Fixas ↑</p>
+            <p className="text-base md:text-xl font-bold truncate">{formatCurrency(fixedIncomes.filter(f => f.isActive).reduce((acc, f) => acc + f.predictedValue, 0))}</p>
+          </div>
+        </Card>
+
+        <Card className="p-3 md:p-4 flex items-center space-x-2 md:space-x-4 border-b-2 border-github-danger min-w-0">
+          <div className="p-2 md:p-3 bg-github-danger/10 text-github-danger rounded-xl flex-shrink-0">
+            <ArrowDownCircle size={16} className="md:hidden" />
+            <ArrowDownCircle size={22} className="hidden md:block" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[8px] md:text-[10px] text-github-muted font-black uppercase tracking-wider truncate">Fixas ↓</p>
+            <p className="text-base md:text-xl font-bold truncate">{formatCurrency(fixedExpenses.filter(f => f.isActive).reduce((acc, f) => acc + f.predictedValue, 0))}</p>
           </div>
         </Card>
       </div>

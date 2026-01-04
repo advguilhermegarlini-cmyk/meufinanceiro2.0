@@ -36,6 +36,7 @@ const InvoiceCard: React.FC<{ card: Bank }> = ({ card }) => {
     const [isAddingSub, setIsAddingSub] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isPayingInvoice, setIsPayingInvoice] = useState(false);
+    const [isReopeningInvoice, setIsReopeningInvoice] = useState(false);
     const [paymentData, setPaymentData] = useState({
         amount: 0,
         sourceBankId: '',
@@ -85,9 +86,29 @@ const InvoiceCard: React.FC<{ card: Bank }> = ({ card }) => {
         }
         const amountToPay = roundToTwoDecimals(paymentData.amount || roundToTwoDecimals(stats.total - stats.paidAmount));
         const isFullPayment = Math.abs(amountToPay - roundToTwoDecimals(stats.total - stats.paidAmount)) < 0.01; // Comparação com tolerância para ponto flutuante
-        await payInvoice(card.id, amountToPay, new Date(paymentData.paymentDate), paymentData.sourceBankId, stats.referenceMonth, isFullPayment);
-        setIsPayingInvoice(false);
-        setPaymentData({ amount: 0, sourceBankId: '', paymentDate: new Date().toISOString().split('T')[0] });
+        try {
+            await payInvoice(card.id, amountToPay, new Date(paymentData.paymentDate), paymentData.sourceBankId, stats.referenceMonth, isFullPayment);
+            setIsPayingInvoice(false);
+            setPaymentData({ amount: 0, sourceBankId: '', paymentDate: new Date().toISOString().split('T')[0] });
+        } catch (error) {
+            console.error('Erro ao pagar fatura:', error);
+            alert(error instanceof Error ? error.message : 'Erro ao pagar fatura. Tente novamente.');
+        }
+    };
+
+    const handleReopenInvoice = async () => {
+        if (isReopeningInvoice) return;
+        if (!window.confirm('Deseja reabrir esta fatura? Os pagamentos serão removidos.')) return;
+        
+        setIsReopeningInvoice(true);
+        try {
+            await reopenInvoice(card.id, stats.referenceMonth);
+        } catch (error) {
+            console.error('Erro ao reabrir fatura:', error);
+            alert(error instanceof Error ? error.message : 'Erro ao reabrir fatura. Tente novamente.');
+        } finally {
+            setIsReopeningInvoice(false);
+        }
     };
 
     const handleChargeback = async (t: any) => {
@@ -249,8 +270,8 @@ const InvoiceCard: React.FC<{ card: Bank }> = ({ card }) => {
                         </Button>
                     )}
                     {stats.status === 'paid' && (
-                        <button onClick={() => reopenInvoice(card.id, stats.referenceMonth)} className="w-full py-3 text-xs font-black uppercase text-github-warning hover:underline flex items-center justify-center gap-2">
-                            <RotateCcw size={14} /> Reabrir Fatura
+                        <button onClick={handleReopenInvoice} disabled={isReopeningInvoice} className="w-full py-3 text-xs font-black uppercase text-github-warning hover:underline flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <RotateCcw size={14} /> {isReopeningInvoice ? 'Reabrindo...' : 'Reabrir Fatura'}
                         </button>
                     )}
                 </div>
@@ -641,6 +662,7 @@ export const InvestmentsModule = () => {
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
     const [selectedInv, setSelectedInv] = useState<{id: string, name: string, type: 'in' | 'out'} | null>(null);
     const [txAmount, setTxAmount] = useState('');
+    const [isProcessingTx, setIsProcessingTx] = useState(false);
 
     const [formData, setFormData] = useState({ 
         name: '', principal: '', rate: '', frequency: 'monthly' as any, bankId: '' 
@@ -663,11 +685,20 @@ export const InvestmentsModule = () => {
     };
 
     const handleConfirmTx = async () => {
-        if (!selectedInv || !txAmount) return;
-        await handleInvestmentTransaction(selectedInv.id, parseFloat(txAmount), selectedInv.type);
-        setIsTxModalOpen(false);
-        setSelectedInv(null);
-        setTxAmount('');
+        if (isProcessingTx || !selectedInv || !txAmount) return;
+        
+        setIsProcessingTx(true);
+        try {
+            await handleInvestmentTransaction(selectedInv.id, parseFloat(txAmount), selectedInv.type);
+            setIsTxModalOpen(false);
+            setSelectedInv(null);
+            setTxAmount('');
+        } catch (error) {
+            console.error('Erro ao processar transação de investimento:', error);
+            alert(error instanceof Error ? error.message : 'Erro ao processar transação. Tente novamente.');
+        } finally {
+            setIsProcessingTx(false);
+        }
     };
 
     return (
@@ -758,8 +789,8 @@ export const InvestmentsModule = () => {
                     </div>
                     <div className="flex gap-4">
                          <Button onClick={() => setIsTxModalOpen(false)} variant="secondary" className="flex-1 py-4 rounded-xl">Cancelar</Button>
-                         <Button onClick={handleConfirmTx} variant="primary" className="flex-1 py-4 rounded-xl shadow-lg shadow-github-success/10">
-                            Confirmar {selectedInv?.type === 'in' ? 'Aporte' : 'Resgate'}
+                         <Button onClick={handleConfirmTx} variant="primary" className="flex-1 py-4 rounded-xl shadow-lg shadow-github-success/10" disabled={isProcessingTx}>
+                            {isProcessingTx ? 'Processando...' : `Confirmar ${selectedInv?.type === 'in' ? 'Aporte' : 'Resgate'}`}
                          </Button>
                     </div>
                 </div>

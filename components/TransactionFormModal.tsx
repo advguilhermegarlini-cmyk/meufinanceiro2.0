@@ -141,7 +141,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ isOp
       });
     } catch (error) {
       console.error('Erro ao salvar transação:', error);
-      alert('Erro ao salvar transação. Verifique sua conexão e tente novamente.');
+      alert(error instanceof Error ? error.message : 'Erro ao salvar transação. Verifique sua conexão e tente novamente.');
     } finally {
       setIsSaving(false);
     }

@@ -12,7 +12,9 @@ import {
   Tags,
   Plus,
   Sun,
-  Moon
+  Moon,
+  ArrowUpCircle,
+  ArrowDownCircle
 } from 'lucide-react';
 import { SINOP_TIMEZONE } from '../utils';
 import { TransactionFormModal } from './TransactionFormModal';
@@ -70,6 +72,8 @@ export const Layout = ({ children, activeTab, setActiveTab }: {
   const tabs = [
     { id: 'dashboard', label: 'Início', icon: LayoutDashboard },
     { id: 'transactions', label: 'Extrato', icon: Receipt },
+    { id: 'fixed-incomes', label: 'Entradas Fixas', icon: ArrowUpCircle },
+    { id: 'fixed-expenses', label: 'Saídas Fixas', icon: ArrowDownCircle },
     { id: 'credit', label: 'Cartões', icon: CreditCard },
     { id: 'banks', label: 'Contas', icon: Wallet },
     { id: 'categories', label: 'Categorias', icon: Tags },

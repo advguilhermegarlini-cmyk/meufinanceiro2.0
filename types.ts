@@ -61,6 +61,24 @@ export interface Subscription {
   isActive: boolean;
 }
 
+export interface FixedIncome {
+  id: string;
+  description: string;
+  categoryId: string;
+  predictedValue: number;
+  launchedMonths: string[]; // Array de "YYYY-MM" onde foi lançado
+  isActive: boolean;
+}
+
+export interface FixedExpense {
+  id: string;
+  description: string;
+  categoryId: string;
+  predictedValue: number;
+  launchedMonths: string[]; // Array de "YYYY-MM" onde foi lançado
+  isActive: boolean;
+}
+
 export interface Transaction {
   id: string;
   amount: number;

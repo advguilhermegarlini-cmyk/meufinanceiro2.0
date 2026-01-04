@@ -1,5 +1,5 @@
 
-import { User, Transaction, Category, Bank, Investment, Subscription } from '../types';
+import { User, Transaction, Category, Bank, Investment, Subscription, FixedIncome, FixedExpense } from '../types';
 import { generateId } from '../utils';
 import { db, auth } from '../src/services/firebase';
 import { doc, setDoc, getDoc, collection, getDocs, query, where, deleteDoc } from 'firebase/firestore';
@@ -61,7 +61,7 @@ const loadUserDataFromFirestore = async (userId: string, dataType: string): Prom
     try {
         const collectionRef = collection(db, 'users', userId, dataType);
         const snapshot = await getDocs(collectionRef);
-        return snapshot.docs.map(doc => doc.data());
+        return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
     } catch (e) {
         console.error(`Erro ao carregar ${dataType}:`, e);
         return [];
@@ -487,5 +487,75 @@ export const DataService = {
         setTable(`mc_subscriptions_${userId}`, list);
         // Salvar no Firestore
         await saveUserDataToFirestore(userId, 'subscriptions', list);
+    },
+
+    async getFixedIncomes(userId: string): Promise<FixedIncome[]> {
+        await delay(DELAY);
+        // Tentar carregar do Firestore primeiro
+        const firebaseData = await loadUserDataFromFirestore(userId, 'fixedIncomes');
+        if (firebaseData.length > 0) {
+            setTable(`mc_fixedIncomes_${userId}`, firebaseData);
+            return firebaseData;
+        }
+        // Fallback para localStorage
+        return getTable<FixedIncome>(`mc_fixedIncomes_${userId}`);
+    },
+
+    async saveFixedIncome(userId: string, fixedIncome: FixedIncome): Promise<FixedIncome> {
+        await delay(DELAY);
+        let list = getTable<FixedIncome>(`mc_fixedIncomes_${userId}`);
+        const index = list.findIndex(f => f.id === fixedIncome.id);
+        if (index >= 0) {
+            list[index] = fixedIncome;
+        } else {
+            list.push(fixedIncome);
+        }
+        setTable(`mc_fixedIncomes_${userId}`, list);
+        // Salvar no Firestore
+        await saveUserDataToFirestore(userId, 'fixedIncomes', list);
+        return fixedIncome;
+    },
+
+    async deleteFixedIncome(userId: string, id: string): Promise<void> {
+        let list = getTable<FixedIncome>(`mc_fixedIncomes_${userId}`);
+        list = list.filter(f => f.id !== id);
+        setTable(`mc_fixedIncomes_${userId}`, list);
+        // Salvar no Firestore
+        await saveUserDataToFirestore(userId, 'fixedIncomes', list);
+    },
+
+    async getFixedExpenses(userId: string): Promise<FixedExpense[]> {
+        await delay(DELAY);
+        // Tentar carregar do Firestore primeiro
+        const firebaseData = await loadUserDataFromFirestore(userId, 'fixedExpenses');
+        if (firebaseData.length > 0) {
+            setTable(`mc_fixedExpenses_${userId}`, firebaseData);
+            return firebaseData;
+        }
+        // Fallback para localStorage
+        return getTable<FixedExpense>(`mc_fixedExpenses_${userId}`);
+    },
+
+    async saveFixedExpense(userId: string, fixedExpense: FixedExpense): Promise<FixedExpense> {
+        await delay(DELAY);
+        let list = getTable<FixedExpense>(`mc_fixedExpenses_${userId}`);
+        const index = list.findIndex(f => f.id === fixedExpense.id);
+        if (index >= 0) {
+            list[index] = fixedExpense;
+        } else {
+            list.push(fixedExpense);
+        }
+        setTable(`mc_fixedExpenses_${userId}`, list);
+        // Salvar no Firestore
+        await saveUserDataToFirestore(userId, 'fixedExpenses', list);
+        return fixedExpense;
+    },
+
+    async deleteFixedExpense(userId: string, id: string): Promise<void> {
+        let list = getTable<FixedExpense>(`mc_fixedExpenses_${userId}`);
+        list = list.filter(f => f.id !== id);
+        setTable(`mc_fixedExpenses_${userId}`, list);
+        // Salvar no Firestore
+        await saveUserDataToFirestore(userId, 'fixedExpenses', list);
     }
 };

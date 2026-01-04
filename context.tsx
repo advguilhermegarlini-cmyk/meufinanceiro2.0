@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, Transaction, Category, Bank, DashboardStats, Investment, InvoiceStats, HealthThresholds, Subscription } from './types';
+import { User, Transaction, Category, Bank, DashboardStats, Investment, InvoiceStats, HealthThresholds, Subscription, FixedIncome, FixedExpense } from './types';
 import { generateId, GITHUB_COLORS } from './utils';
 import { AuthService, DataService } from './services/api';
 
@@ -40,6 +40,8 @@ interface AppContextType {
   banks: Bank[];
   investments: Investment[];
   subscriptions: Subscription[];
+  fixedIncomes: FixedIncome[];
+  fixedExpenses: FixedExpense[];
   healthThresholds: HealthThresholds;
   updateHealthThresholds: (t: HealthThresholds) => void;
   
@@ -66,6 +68,16 @@ interface AppContextType {
 
   addSubscription: (sub: Omit<Subscription, 'id'>) => Promise<void>;
   updateSubscription: (sub: Subscription) => Promise<void>;
+  addFixedIncome: (fixedIncome: Omit<FixedIncome, 'id'>) => Promise<void>;
+  updateFixedIncome: (fixedIncome: FixedIncome) => Promise<void>;
+  deleteFixedIncome: (id: string) => Promise<void>;
+  launchFixedIncome: (id: string, amount: number, date: string, bankId: string) => Promise<void>;
+
+  addFixedExpense: (fixedExpense: Omit<FixedExpense, 'id'>) => Promise<void>;
+  updateFixedExpense: (fixedExpense: FixedExpense) => Promise<void>;
+  deleteFixedExpense: (id: string) => Promise<void>;
+  launchFixedExpense: (id: string, amount: number, date: string, bankId: string) => Promise<void>;
+
   deleteSubscription: (id: string) => Promise<void>;
 
   getDashboardStats: (date: Date) => DashboardStats;
@@ -85,12 +97,60 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
   const [banks, setBanks] = useState<Bank[]>([]);
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [fixedIncomes, setFixedIncomes] = useState<FixedIncome[]>([]);
+  const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [healthThresholds, setHealthThresholds] = useState<HealthThresholds>(DEFAULT_THRESHOLDS);
   const [isTransactionModalOpen, setTransactionModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
-  useEffect(() => {
+  // ========== FUNÇÕES CENTRALIZADAS PARA CONSISTÊNCIA DO EXTRATO ==========
+  
+  // Função centralizada para criação de transações - garante que TODAS as transações apareçam no extrato
+  const createTransactionInternal = async (transaction: Transaction, updateBalances: {id: string, balance: number}[] = []) => {
+    if (!user) throw new Error('Usuário não autenticado');
+    
+    // 1. Salvar no Firebase primeiro (fonte da verdade)
+    await DataService.createTransaction(user.id, transaction);
+    
+    // 2. Atualizar saldos se necessário
+    if (updateBalances.length > 0) {
+      await DataService.updateBankBalances(user.id, updateBalances);
+    }
+    
+    // 3. Atualizar estado local APENAS após sucesso do Firebase
+    setTransactions(prev => [transaction, ...prev]);
+    if (updateBalances.length > 0) {
+      setBanks(prev => prev.map(b => {
+        const update = updateBalances.find(u => u.id === b.id);
+        return update ? { ...b, balance: update.balance } : b;
+      }));
+    }
+  };
+
+  // Função centralizada para criação de múltiplas transações
+  const createTransactionsBatchInternal = async (transactions: Transaction[], updateBalances: {id: string, balance: number}[] = []) => {
+    if (!user) throw new Error('Usuário não autenticado');
+    
+    // 1. Salvar no Firebase primeiro (fonte da verdade)
+    await DataService.createTransactionsBatch(user.id, transactions);
+    
+    // 2. Atualizar saldos se necessário
+    if (updateBalances.length > 0) {
+      await DataService.updateBankBalances(user.id, updateBalances);
+    }
+    
+    // 3. Atualizar estado local APENAS após sucesso do Firebase
+    setTransactions(prev => [...transactions, ...prev]);
+    if (updateBalances.length > 0) {
+      setBanks(prev => prev.map(b => {
+        const update = updateBalances.find(u => u.id === b.id);
+        return update ? { ...b, balance: update.balance } : b;
+      }));
+    }
+  };
+
+  // =========================================================================
     const init = async () => {
         try {
             const storedUser = localStorage.getItem('mc_user');
@@ -107,26 +167,32 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
             }
         } catch (error) { console.error("Failed to load session", error); }
     };
-    init();
-  }, []);
+
+    useEffect(() => {
+        init();
+    }, []);
 
   useEffect(() => {
       const fetchData = async () => {
           if (!user) return;
           setIsLoading(true);
           try {
-              const [txs, cats, bks, invs, subs] = await Promise.all([
+              const [txs, cats, bks, invs, subs, fixedInc, fixedExp] = await Promise.all([
                   DataService.getTransactions(user.id),
                   DataService.getCategories(user.id),
                   DataService.getBanks(user.id),
                   DataService.getInvestments(user.id),
-                  DataService.getSubscriptions(user.id)
+                  DataService.getSubscriptions(user.id),
+                  DataService.getFixedIncomes(user.id),
+                  DataService.getFixedExpenses(user.id)
               ]);
               setTransactions(txs || []);
               setCategories(cats || []);
               setBanks(bks || []);
               setInvestments(invs || []);
               setSubscriptions(subs || []);
+              setFixedIncomes(fixedInc || []);
+              setFixedExpenses(fixedExp || []);
           } catch (e) { console.error("Error fetching data:", e); } finally { setIsLoading(false); }
       };
       fetchData();
@@ -286,16 +352,8 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     }
 
     try {
-      await DataService.createTransactionsBatch(user.id, newTxList);
-      if (bankUpdates.length > 0) await DataService.updateBankBalances(user.id, bankUpdates);
-
-      setTransactions(prev => [...newTxList, ...prev]);
-      if (bankUpdates.length > 0) {
-          setBanks(prev => prev.map(b => {
-              const update = bankUpdates.find(u => u.id === b.id);
-              return update ? { ...b, balance: update.balance } : b;
-          }));
-      }
+      // Usar função centralizada para garantir consistência do extrato
+      await createTransactionsBatchInternal(newTxList, bankUpdates);
     } catch (error) {
       console.error('Erro ao salvar transação:', error);
       throw error; // Re-throw para que o componente possa tratar
@@ -484,18 +542,16 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
         notes: `Estorno referente à transação realizada em ${new Date(original.date).toLocaleDateString('pt-BR')}`
     };
 
-    await DataService.createTransaction(user.id, chargebackTx);
-    
+    // Criar transação de estorno usando função centralizada
+    const bankUpdates: {id: string, balance: number}[] = [];
     if (!original.isCreditCard) {
         const bank = banks.find(b => b.id === original?.bankId);
         if (bank) {
-            const newBalance = (bank.balance || 0) + original.amount;
-            await DataService.updateBankBalance(user.id, bank.id, newBalance);
-            setBanks(prev => prev.map(b => b.id === bank.id ? { ...b, balance: newBalance } : b));
+            bankUpdates.push({ id: bank.id, balance: (bank.balance || 0) + original.amount });
         }
     }
 
-    setTransactions(prev => [chargebackTx, ...prev]);
+    await createTransactionInternal(chargebackTx, bankUpdates);
   };
 
   const payInvoice = async (cardId: string, amount: number, paymentDate: Date, sourceBankId: string, referenceMonth: string, isFullPayment: boolean) => {
@@ -530,16 +586,19 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
         });
     }
 
-    await DataService.updateBankBalance(user.id, sourceBankId, newSourceBalance);
-    await DataService.createTransaction(user.id, paymentTx);
-    for (const t of txsToUpdate) await DataService.updateTransaction(user.id, t);
-    
-    setBanks(prev => prev.map(b => b.id === sourceBankId ? { ...b, balance: newSourceBalance } : b));
-    setTransactions(prev => {
+    // Criar transação de pagamento usando função centralizada
+    await createTransactionInternal(paymentTx, [{ id: sourceBankId, balance: newSourceBalance }]);
+
+    // Atualizar transações reconciliadas (se pagamento total)
+    if (txsToUpdate.length > 0) {
+      for (const t of txsToUpdate) {
+        await DataService.updateTransaction(user.id, t);
+      }
+      setTransactions(prev => {
         const updatedIds = txsToUpdate.map(t => t.id);
-        const merged = prev.map(p => updatedIds.includes(p.id) ? { ...p, isReconciled: true } : p);
-        return [paymentTx, ...merged];
-    });
+        return prev.map(p => updatedIds.includes(p.id) ? { ...p, isReconciled: true } : p);
+      });
+    }
   };
 
   const reopenInvoice = async (cardId: string, referenceMonth: string) => {
@@ -630,12 +689,12 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     if(!bank) return;
     const newBankBalance = type === 'in' ? (bank.balance || 0) - amount : (bank.balance || 0) + amount;
     const tx: Transaction = { id: generateId(), description: type === 'in' ? `Aporte: ${investment.name}` : `Resgate: ${investment.name}`, amount, date: new Date().toISOString(), type: 'transfer', categoryId: SYSTEM_CATEGORY_ID, bankId: investment.bankId, isCreditCard: false, isReconciled: true };
+    // Criar transação usando função centralizada
+    await createTransactionInternal(tx, [{ id: bank.id, balance: newBankBalance }]);
+    
+    // Atualizar investimento
     await DataService.saveInvestment(user.id, updatedInv);
-    await DataService.updateBankBalance(user.id, bank.id, newBankBalance);
-    await DataService.createTransaction(user.id, tx);
     setInvestments(prev => prev.map(i => i.id === investmentId ? updatedInv : i));
-    setBanks(prev => prev.map(b => b.id === investment.bankId ? { ...b, balance: newBankBalance } : b));
-    setTransactions(prev => [tx, ...prev]);
   };
 
   const addSubscription = async (sub: Omit<Subscription, 'id'>) => {
@@ -792,14 +851,134 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     };
   };
 
+  // ========== FIXED INCOMES ==========
+  const addFixedIncome = async (fixedIncome: Omit<FixedIncome, 'id'>) => {
+    if (!user) throw new Error('Usuário não autenticado');
+    const id = generateId();
+    const newFixedIncome: FixedIncome = { ...fixedIncome, id };
+    await DataService.saveFixedIncome(user.id, newFixedIncome);
+    setFixedIncomes(prev => [...prev, newFixedIncome]);
+  };
+
+  const updateFixedIncome = async (fixedIncome: FixedIncome) => {
+    if (!user) throw new Error('Usuário não autenticado');
+    await DataService.saveFixedIncome(user.id, fixedIncome);
+    setFixedIncomes(prev => prev.map(f => f.id === fixedIncome.id ? fixedIncome : f));
+  };
+
+  const deleteFixedIncome = async (id: string) => {
+    if (!user) throw new Error('Usuário não autenticado');
+    await DataService.deleteFixedIncome(user.id, id);
+    setFixedIncomes(prev => prev.filter(f => f.id !== id));
+  };
+
+  const launchFixedIncome = async (id: string, amount: number, date: string, bankId: string) => {
+    if (!user) throw new Error('Usuário não autenticado');
+    
+    const fixedIncome = fixedIncomes.find(f => f.id === id);
+    if (!fixedIncome) throw new Error('Entrada fixa não encontrada');
+    
+    const bank = banks.find(b => b.id === bankId);
+    if (!bank) throw new Error('Conta bancária não encontrada');
+    
+    const currentMonth = date.slice(0, 7);
+    if (fixedIncome.launchedMonths.includes(currentMonth)) {
+      throw new Error('Esta entrada já foi lançada neste mês');
+    }
+    
+    // Criar transação de renda
+    const tx: Transaction = {
+      id: generateId(),
+      description: fixedIncome.description,
+      amount,
+      date: new Date(date).toISOString(),
+      type: 'income',
+      categoryId: fixedIncome.categoryId,
+      bankId,
+      isCreditCard: false,
+      isReconciled: true
+    };
+    
+    const newBalance = bank.balance + amount;
+    await createTransactionInternal(tx, [{ id: bankId, balance: newBalance }]);
+    
+    // Atualizar fixed income com mês lançado
+    const updatedFixedIncome = {
+      ...fixedIncome,
+      launchedMonths: [...fixedIncome.launchedMonths, currentMonth]
+    };
+    await updateFixedIncome(updatedFixedIncome);
+  };
+
+  // ========== FIXED EXPENSES ==========
+  const addFixedExpense = async (fixedExpense: Omit<FixedExpense, 'id'>) => {
+    if (!user) throw new Error('Usuário não autenticado');
+    const id = generateId();
+    const newFixedExpense: FixedExpense = { ...fixedExpense, id };
+    await DataService.saveFixedExpense(user.id, newFixedExpense);
+    setFixedExpenses(prev => [...prev, newFixedExpense]);
+  };
+
+  const updateFixedExpense = async (fixedExpense: FixedExpense) => {
+    if (!user) throw new Error('Usuário não autenticado');
+    await DataService.saveFixedExpense(user.id, fixedExpense);
+    setFixedExpenses(prev => prev.map(f => f.id === fixedExpense.id ? fixedExpense : f));
+  };
+
+  const deleteFixedExpense = async (id: string) => {
+    if (!user) throw new Error('Usuário não autenticado');
+    await DataService.deleteFixedExpense(user.id, id);
+    setFixedExpenses(prev => prev.filter(f => f.id !== id));
+  };
+
+  const launchFixedExpense = async (id: string, amount: number, date: string, bankId: string) => {
+    if (!user) throw new Error('Usuário não autenticado');
+    
+    const fixedExpense = fixedExpenses.find(f => f.id === id);
+    if (!fixedExpense) throw new Error('Saída fixa não encontrada');
+    
+    const bank = banks.find(b => b.id === bankId);
+    if (!bank) throw new Error('Conta bancária não encontrada');
+    
+    const currentMonth = date.slice(0, 7);
+    if (fixedExpense.launchedMonths.includes(currentMonth)) {
+      throw new Error('Esta saída já foi lançada neste mês');
+    }
+    
+    // Criar transação de despesa
+    const tx: Transaction = {
+      id: generateId(),
+      description: fixedExpense.description,
+      amount,
+      date: new Date(date).toISOString(),
+      type: 'expense',
+      categoryId: fixedExpense.categoryId,
+      bankId,
+      isCreditCard: false,
+      isReconciled: true
+    };
+    
+    const newBalance = bank.balance - amount;
+    await createTransactionInternal(tx, [{ id: bankId, balance: newBalance }]);
+    
+    // Atualizar fixed expense com mês lançado
+    const updatedFixedExpense = {
+      ...fixedExpense,
+      launchedMonths: [...fixedExpense.launchedMonths, currentMonth]
+    };
+    await updateFixedExpense(updatedFixedExpense);
+  };
+
   return (
     <AppContext.Provider value={{
-      user, theme, appLogo, isLoading, toggleTheme, updateAppLogo, login, register, updateUserProfile, uploadAvatar, changePassword, resetPassword, deleteAccount, logout, transactions, categories, banks, investments, subscriptions,
+      user, theme, appLogo, isLoading, toggleTheme, updateAppLogo, login, register, updateUserProfile, uploadAvatar, changePassword, resetPassword, deleteAccount, logout, transactions, categories, banks, investments, subscriptions, fixedIncomes, fixedExpenses,
       addTransaction, deleteTransaction, updateTransaction, chargebackTransaction, payInvoice, reopenInvoice,
       addCategory, updateCategory, deleteCategory,
       addBank, updateBank, deleteBank,
       addInvestment, updateInvestment, deleteInvestment, handleInvestmentTransaction,
       addSubscription, updateSubscription, deleteSubscription,
+      addFixedIncome, updateFixedIncome, deleteFixedIncome, launchFixedIncome,
+      addFixedExpense, updateFixedExpense, deleteFixedExpense, launchFixedExpense,
       getDashboardStats, getBankBalanceAtDate, getOverallBalanceAtDate, getInvoiceStats,
       healthThresholds, updateHealthThresholds,
       isTransactionModalOpen, setTransactionModalOpen,

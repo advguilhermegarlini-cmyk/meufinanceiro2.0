@@ -5,6 +5,7 @@ import { Layout, Button, Card } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
 import { Transactions } from './components/Transactions';
 import { CreditCardsModule, BanksModule, CategoriesModule, InvestmentsModule } from './components/FinanceModules';
+import { FixedIncomesModule, FixedExpensesModule } from './components/FixedModules';
 import { AlertTriangle, User, Mail, Moon, Sun, LogOut, Save, HeartPulse, ChevronRight, Camera, Trash2, Settings, X, Lock, Key, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { SINOP_TIMEZONE } from './utils';
 import { TEST_USER_EMAIL } from './services/api';
@@ -519,6 +520,8 @@ const MainApp = () => {
     switch (activeTab) {
       case 'dashboard': return <Dashboard />;
       case 'transactions': return <Transactions />;
+      case 'fixed-incomes': return <FixedIncomesModule />;
+      case 'fixed-expenses': return <FixedExpensesModule />;
       case 'credit': return <CreditCardsModule />;
       case 'investments': return <InvestmentsModule />;
       case 'banks': return <BanksModule />;
