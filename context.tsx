@@ -141,7 +141,8 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     }
     
     // 3. Atualizar estado local APENAS após sucesso do Firebase
-    setTransactions(prev => [...transactions, ...prev]);
+    // Adiciona as transações ao final da lista (não ao início)
+    setTransactions(prev => [...prev, ...transactions]);
     if (updateBalances.length > 0) {
       setBanks(prev => prev.map(b => {
         const update = updateBalances.find(u => u.id === b.id);

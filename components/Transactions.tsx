@@ -59,7 +59,7 @@ export const Transactions = () => {
 
   const filtered = transactions.filter(t => {
     const tDate = new Date(t.date);
-    const matchMonth = tDate.getUTCMonth() === currentDate.getMonth() && tDate.getUTCFullYear() === currentDate.getFullYear();
+    const matchMonth = tDate.getMonth() === currentDate.getMonth() && tDate.getFullYear() === currentDate.getFullYear();
     const matchSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchType = filterType === 'all' || t.type === filterType;
     return matchSearch && matchType && matchMonth;

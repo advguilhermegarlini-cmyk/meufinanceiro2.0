@@ -274,12 +274,19 @@ export const DataService = {
         await delay(DELAY);
         // Tentar carregar do Firestore primeiro
         const firebaseData = await loadUserDataFromFirestore(userId, 'transactions');
+        const localData = getTable<Transaction>(`mc_transactions_${userId}`);
+        
         if (firebaseData.length > 0) {
-            setTable(`mc_transactions_${userId}`, firebaseData);
-            return firebaseData;
+            // Merge: manter dados do Firebase como source of truth, mas adicionar dados locais que não existem no Firebase
+            const firebaseIds = new Set(firebaseData.map(t => t.id));
+            const localOnlyTransactions = localData.filter(t => !firebaseIds.has(t.id));
+            const mergedData = [...firebaseData, ...localOnlyTransactions];
+            
+            setTable(`mc_transactions_${userId}`, mergedData);
+            return mergedData;
         }
         // Fallback para localStorage
-        return getTable<Transaction>(`mc_transactions_${userId}`);
+        return localData;
     },
 
     async createTransaction(userId: string, transaction: Transaction): Promise<Transaction> {
@@ -328,12 +335,19 @@ export const DataService = {
         await delay(DELAY);
         // Tentar carregar do Firestore primeiro
         const firebaseData = await loadUserDataFromFirestore(userId, 'categories');
+        const localData = getTable<Category>(`mc_categories_${userId}`);
+        
         if (firebaseData.length > 0) {
-            setTable(`mc_categories_${userId}`, firebaseData);
-            return firebaseData;
+            // Merge: manter dados do Firebase como source of truth, mas adicionar dados locais que não existem no Firebase
+            const firebaseIds = new Set(firebaseData.map(t => t.id));
+            const localOnlyData = localData.filter(t => !firebaseIds.has(t.id));
+            const mergedData = [...firebaseData, ...localOnlyData];
+            
+            setTable(`mc_categories_${userId}`, mergedData);
+            return mergedData;
         }
         // Fallback para localStorage
-        return getTable<Category>(`mc_categories_${userId}`);
+        return localData;
     },
 
     async createCategory(userId: string, category: Category): Promise<Category> {
@@ -369,12 +383,19 @@ export const DataService = {
         await delay(DELAY);
         // Tentar carregar do Firestore primeiro
         const firebaseData = await loadUserDataFromFirestore(userId, 'banks');
+        const localData = getTable<Bank>(`mc_banks_${userId}`);
+        
         if (firebaseData.length > 0) {
-            setTable(`mc_banks_${userId}`, firebaseData);
-            return firebaseData;
+            // Merge: manter dados do Firebase como source of truth, mas adicionar dados locais que não existem no Firebase
+            const firebaseIds = new Set(firebaseData.map(t => t.id));
+            const localOnlyData = localData.filter(t => !firebaseIds.has(t.id));
+            const mergedData = [...firebaseData, ...localOnlyData];
+            
+            setTable(`mc_banks_${userId}`, mergedData);
+            return mergedData;
         }
         // Fallback para localStorage
-        return getTable<Bank>(`mc_banks_${userId}`);
+        return localData;
     },
 
     async saveBank(userId: string, bank: Bank): Promise<Bank> {
@@ -425,12 +446,19 @@ export const DataService = {
         await delay(DELAY);
         // Tentar carregar do Firestore primeiro
         const firebaseData = await loadUserDataFromFirestore(userId, 'investments');
+        const localData = getTable<Investment>(`mc_investments_${userId}`);
+        
         if (firebaseData.length > 0) {
-            setTable(`mc_investments_${userId}`, firebaseData);
-            return firebaseData;
+            // Merge: manter dados do Firebase como source of truth, mas adicionar dados locais que não existem no Firebase
+            const firebaseIds = new Set(firebaseData.map(t => t.id));
+            const localOnlyData = localData.filter(t => !firebaseIds.has(t.id));
+            const mergedData = [...firebaseData, ...localOnlyData];
+            
+            setTable(`mc_investments_${userId}`, mergedData);
+            return mergedData;
         }
         // Fallback para localStorage
-        return getTable<Investment>(`mc_investments_${userId}`);
+        return localData;
     },
 
     async saveInvestment(userId: string, investment: Investment): Promise<Investment> {
@@ -459,12 +487,19 @@ export const DataService = {
         await delay(DELAY);
         // Tentar carregar do Firestore primeiro
         const firebaseData = await loadUserDataFromFirestore(userId, 'subscriptions');
+        const localData = getTable<Subscription>(`mc_subscriptions_${userId}`);
+        
         if (firebaseData.length > 0) {
-            setTable(`mc_subscriptions_${userId}`, firebaseData);
-            return firebaseData;
+            // Merge: manter dados do Firebase como source of truth, mas adicionar dados locais que não existem no Firebase
+            const firebaseIds = new Set(firebaseData.map(t => t.id));
+            const localOnlyData = localData.filter(t => !firebaseIds.has(t.id));
+            const mergedData = [...firebaseData, ...localOnlyData];
+            
+            setTable(`mc_subscriptions_${userId}`, mergedData);
+            return mergedData;
         }
         // Fallback para localStorage
-        return getTable<Subscription>(`mc_subscriptions_${userId}`);
+        return localData;
     },
 
     async saveSubscription(userId: string, subscription: Subscription): Promise<Subscription> {
@@ -493,12 +528,19 @@ export const DataService = {
         await delay(DELAY);
         // Tentar carregar do Firestore primeiro
         const firebaseData = await loadUserDataFromFirestore(userId, 'fixedIncomes');
+        const localData = getTable<FixedIncome>(`mc_fixedIncomes_${userId}`);
+        
         if (firebaseData.length > 0) {
-            setTable(`mc_fixedIncomes_${userId}`, firebaseData);
-            return firebaseData;
+            // Merge: manter dados do Firebase como source of truth, mas adicionar dados locais que não existem no Firebase
+            const firebaseIds = new Set(firebaseData.map(t => t.id));
+            const localOnlyData = localData.filter(t => !firebaseIds.has(t.id));
+            const mergedData = [...firebaseData, ...localOnlyData];
+            
+            setTable(`mc_fixedIncomes_${userId}`, mergedData);
+            return mergedData;
         }
         // Fallback para localStorage
-        return getTable<FixedIncome>(`mc_fixedIncomes_${userId}`);
+        return localData;
     },
 
     async saveFixedIncome(userId: string, fixedIncome: FixedIncome): Promise<FixedIncome> {
@@ -528,12 +570,19 @@ export const DataService = {
         await delay(DELAY);
         // Tentar carregar do Firestore primeiro
         const firebaseData = await loadUserDataFromFirestore(userId, 'fixedExpenses');
+        const localData = getTable<FixedExpense>(`mc_fixedExpenses_${userId}`);
+        
         if (firebaseData.length > 0) {
-            setTable(`mc_fixedExpenses_${userId}`, firebaseData);
-            return firebaseData;
+            // Merge: manter dados do Firebase como source of truth, mas adicionar dados locais que não existem no Firebase
+            const firebaseIds = new Set(firebaseData.map(t => t.id));
+            const localOnlyData = localData.filter(t => !firebaseIds.has(t.id));
+            const mergedData = [...firebaseData, ...localOnlyData];
+            
+            setTable(`mc_fixedExpenses_${userId}`, mergedData);
+            return mergedData;
         }
         // Fallback para localStorage
-        return getTable<FixedExpense>(`mc_fixedExpenses_${userId}`);
+        return localData;
     },
 
     async saveFixedExpense(userId: string, fixedExpense: FixedExpense): Promise<FixedExpense> {
