@@ -335,7 +335,7 @@ const HealthThermometer = () => {
 };
 
 export const Dashboard = () => {
-  const { transactions, getDashboardStats, getOverallBalanceAtDate, categories, isLoading, fixedIncomes, fixedExpenses } = useApp();
+  const { transactions, getDashboardStats, getOverallBalanceAtDate, categories, isLoading } = useApp();
   const today = useMemo(() => new Date(), []);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const stats = useMemo(() => getDashboardStats(selectedMonth), [getDashboardStats, selectedMonth, transactions]);
@@ -449,28 +449,6 @@ export const Dashboard = () => {
           <div className="min-w-0 flex-1">
             <p className="text-[8px] md:text-[10px] text-github-muted font-black uppercase tracking-wider truncate">Faturas do Mês</p>
             <p className="text-base md:text-xl font-bold truncate">{formatCurrency(stats.creditCardBill || 0)}</p>
-          </div>
-        </Card>
-
-        <Card className="p-3 md:p-4 flex items-center space-x-2 md:space-x-4 border-b-2 border-github-success min-w-0">
-          <div className="p-2 md:p-3 bg-github-success/10 text-github-success rounded-xl flex-shrink-0">
-            <ArrowUpCircle size={16} className="md:hidden" />
-            <ArrowUpCircle size={22} className="hidden md:block" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[8px] md:text-[10px] text-github-muted font-black uppercase tracking-wider truncate">Fixas ↑</p>
-            <p className="text-base md:text-xl font-bold truncate">{formatCurrency(fixedIncomes.filter(f => f.isActive).reduce((acc, f) => acc + f.predictedValue, 0))}</p>
-          </div>
-        </Card>
-
-        <Card className="p-3 md:p-4 flex items-center space-x-2 md:space-x-4 border-b-2 border-github-danger min-w-0">
-          <div className="p-2 md:p-3 bg-github-danger/10 text-github-danger rounded-xl flex-shrink-0">
-            <ArrowDownCircle size={16} className="md:hidden" />
-            <ArrowDownCircle size={22} className="hidden md:block" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[8px] md:text-[10px] text-github-muted font-black uppercase tracking-wider truncate">Fixas ↓</p>
-            <p className="text-base md:text-xl font-bold truncate">{formatCurrency(fixedExpenses.filter(f => f.isActive).reduce((acc, f) => acc + f.predictedValue, 0))}</p>
           </div>
         </Card>
       </div>

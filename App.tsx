@@ -5,7 +5,6 @@ import { Layout, Button, Card } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
 import { Transactions } from './components/Transactions';
 import { CreditCardsModule, BanksModule, CategoriesModule, InvestmentsModule } from './components/FinanceModules';
-import { FixedIncomesModule, FixedExpensesModule } from './components/FixedModules';
 import { AlertTriangle, User, Mail, Moon, Sun, LogOut, Save, HeartPulse, ChevronRight, Camera, Trash2, Settings, X, Lock, Key, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { SINOP_TIMEZONE } from './utils';
 import { TEST_USER_EMAIL } from './services/api';
@@ -454,19 +453,6 @@ const AuthScreen = () => {
     }
   };
 
-  const handleDemoMode = async () => {
-      setEmail(TEST_USER_EMAIL);
-      setPassword('123');
-      setLoading(true);
-      try {
-          await login(TEST_USER_EMAIL, '123');
-      } catch (err) {
-          alert("Erro ao entrar no modo demo.");
-      } finally {
-          setLoading(false);
-      }
-  };
-
   return (
     <div className="min-h-screen bg-[#0d1117] flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-[#161b22] border border-[#30363d] rounded-[2.5rem] p-10 shadow-2xl animate-in fade-in zoom-in-95 duration-700">
@@ -491,20 +477,6 @@ const AuthScreen = () => {
             {loading ? 'Validando...' : (view === 'login' ? 'Acessar Conta' : 'Finalizar Cadastro')}
           </button>
         </form>
-
-        {view === 'login' && (
-            <div className="mt-8 pt-8 border-t border-github-border/50">
-                <button 
-                    onClick={handleDemoMode}
-                    className="w-full flex items-center justify-center gap-2 py-4 px-4 bg-github-bg border border-github-primary/30 text-github-primary rounded-2xl font-black uppercase text-xs hover:bg-github-primary/10 transition-all active:scale-95"
-                >
-                    <Sparkles size={16} /> Acessar Modo de Demonstração
-                </button>
-                <p className="text-[10px] text-github-muted text-center mt-4 font-bold uppercase tracking-widest leading-relaxed">
-                    Explore o aplicativo com dados pré-lançados <br/> de contas, cartões e investimentos.
-                </p>
-            </div>
-        )}
       </div>
     </div>
   );
@@ -520,8 +492,6 @@ const MainApp = () => {
     switch (activeTab) {
       case 'dashboard': return <Dashboard />;
       case 'transactions': return <Transactions />;
-      case 'fixed-incomes': return <FixedIncomesModule />;
-      case 'fixed-expenses': return <FixedExpensesModule />;
       case 'credit': return <CreditCardsModule />;
       case 'investments': return <InvestmentsModule />;
       case 'banks': return <BanksModule />;
