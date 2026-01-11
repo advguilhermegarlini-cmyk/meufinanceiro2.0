@@ -70,33 +70,33 @@ export const Transactions = () => {
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3 md:gap-4">
         <div>
-            <h2 className="text-2xl md:text-3xl font-black text-github-text tracking-tight uppercase">Extrato</h2>
-            <p className="text-xs md:text-sm text-github-muted">Controle detalhado de entradas e saídas</p>
+            <h2 className="text-xl md:text-3xl font-black text-github-text tracking-tight uppercase">Extrato</h2>
+            <p className="text-[10px] md:text-sm text-github-muted">Controle detalhado de entradas e saídas</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center">
-          <div className="flex items-center bg-github-surface border border-github-border rounded-2xl p-1 shadow-sm flex-1 sm:flex-none">
-            <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-github-border rounded-lg text-github-muted transition-all"><ChevronLeft size={16} className="md:hidden" /><ChevronLeft size={18} className="hidden md:block" /></button>
+        <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-4 items-stretch sm:items-center">
+          <div className="flex items-center bg-github-surface border border-github-border rounded-2xl p-1 shadow-sm flex-1 sm:flex-none min-h-[40px]">
+            <button onClick={() => changeMonth(-1)} className="p-1.5 md:p-2 hover:bg-github-border rounded-lg text-github-muted transition-all flex-shrink-0"><ChevronLeft size={14} className="md:hidden" /><ChevronLeft size={18} className="hidden md:block" /></button>
             <div className="relative px-2 md:px-4 text-center group cursor-pointer flex-1">
                <span className="text-[9px] md:text-sm font-black uppercase tracking-tighter block text-github-text whitespace-nowrap">{currentDate.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}</span>
                <input type="month" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleDateChange} value={`${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`} />
             </div>
-            <button onClick={() => changeMonth(1)} className="p-2 hover:bg-github-border rounded-lg text-github-muted transition-all"><ChevronRight size={16} className="md:hidden" /><ChevronRight size={18} className="hidden md:block" /></button>
+            <button onClick={() => changeMonth(1)} className="p-1.5 md:p-2 hover:bg-github-border rounded-lg text-github-muted transition-all flex-shrink-0"><ChevronRight size={14} className="md:hidden" /><ChevronRight size={18} className="hidden md:block" /></button>
           </div>
           
-          <Button onClick={() => { setEditingTransaction(null); setTransactionModalOpen(true); }} variant="primary" className="w-full sm:w-auto px-3 md:px-8 py-3 rounded-2xl shadow-xl shadow-github-success/10 text-xs md:text-sm whitespace-nowrap"><Plus size={14} className="md:hidden" /><Plus size={18} className="hidden md:block" /> <span className="hidden sm:inline">Novo</span><span className="sm:hidden">+</span><span className="hidden sm:inline"> Fluxo</span></Button>
+          <Button onClick={() => { setEditingTransaction(null); setTransactionModalOpen(true); }} variant="primary" className="w-full sm:w-auto px-3 md:px-8 py-2.5 md:py-3 rounded-2xl shadow-xl shadow-github-success/10 text-[10px] md:text-sm whitespace-nowrap h-10 md:h-auto"><Plus size={12} className="md:hidden" /><Plus size={16} className="hidden md:block" /> <span className="hidden sm:inline">Novo</span><span className="sm:hidden">+</span><span className="hidden sm:inline"> Fluxo</span></Button>
         </div>
       </div>
 
-      <div className="flex gap-2 md:gap-3 flex-col sm:flex-row">
+      <div className="flex gap-2 flex-col sm:flex-row">
         <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-2.5 md:top-3.5 md:hidden text-github-muted flex-shrink-0" size={14} />
-          <Search className="absolute left-4 top-3.5 hidden md:block text-github-muted" size={18} />
-          <input placeholder="Buscar..." className="w-full pl-9 md:pl-12 pr-3 md:pr-4 py-2.5 md:py-3.5 text-xs md:text-sm bg-github-surface border border-github-border rounded-2xl text-github-text outline-none focus:border-github-primary shadow-inner font-bold" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <Search className="absolute left-2 top-2.5 md:top-3.5 md:hidden text-github-muted flex-shrink-0" size={12} />
+          <Search className="absolute left-4 top-3.5 hidden md:block text-github-muted" size={16} />
+          <input placeholder="Buscar..." className="w-full pl-7 md:pl-12 pr-2.5 md:pr-4 py-2.5 md:py-3.5 text-[10px] md:text-sm bg-github-surface border border-github-border rounded-2xl text-github-text outline-none focus:border-github-primary shadow-inner font-bold" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
-        <select className="bg-github-surface border border-github-border rounded-2xl px-3 md:px-4 py-2.5 md:py-3.5 text-xs md:text-sm font-black uppercase outline-none text-github-text shadow-sm appearance-none cursor-pointer flex-shrink-0" value={filterType} onChange={(e) => setFilterType(e.target.value as any)}>
+        <select className="bg-github-surface border border-github-border rounded-2xl px-2.5 md:px-4 py-2.5 md:py-3.5 text-[9px] md:text-sm font-black uppercase outline-none text-github-text shadow-sm appearance-none cursor-pointer flex-shrink-0" value={filterType} onChange={(e) => setFilterType(e.target.value as any)}>
           <option value="all">Todos</option>
           <option value="income">↑ Entrada</option>
           <option value="expense">↓ Saída</option>
@@ -123,41 +123,41 @@ export const Transactions = () => {
             const isTrans = t.type === 'transfer';
             
             return (
-              <Card key={t.id} className={`p-3 md:p-5 hover:border-github-primary transition-all group border-l-4 md:border-l-8 ${
+              <Card key={t.id} className={`p-2.5 md:p-5 hover:border-github-primary transition-all group border-l-4 md:border-l-8 ${
                   isTrans ? 'border-l-github-primary' : (isInc ? 'border-l-github-success' : 'border-l-github-danger')
               }`}>
-                <div className="flex justify-between items-start gap-2 md:gap-4 mb-3 md:mb-4">
+                <div className="flex justify-between items-start gap-1.5 md:gap-4 mb-2 md:mb-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                      <span className="text-[7px] md:text-[10px] font-black uppercase text-github-muted bg-github-bg px-1.5 md:px-2 py-0.5 rounded-lg border border-github-border whitespace-nowrap">{formatDateTime(t.date)}</span>
+                    <div className="flex items-center gap-1 mb-1 flex-wrap">
+                      <span className="text-[6px] md:text-[10px] font-black uppercase text-github-muted bg-github-bg px-1 md:px-2 py-0.5 rounded-lg border border-github-border whitespace-nowrap">{formatDateTime(t.date)}</span>
                       {t.isChargeback && (
                         <>
-                          <Undo2 size={10} className="hidden md:block text-github-success" />
-                          <Undo2 size={8} className="md:hidden text-github-success" />
+                          <Undo2 size={8} className="hidden md:block text-github-success" />
+                          <Undo2 size={6} className="md:hidden text-github-success" />
                         </>
                       )}
                     </div>
-                    <h3 className="font-bold text-xs md:text-sm text-github-text truncate pr-2">
+                    <h3 className="font-bold text-[10px] md:text-sm text-github-text truncate pr-1 md:pr-2">
                       {t.description}
                     </h3>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className={`font-mono text-sm md:text-lg font-black ${isInc ? 'text-github-success' : (isExp ? 'text-github-danger' : 'text-github-text')}`}>
+                    <p className={`font-mono text-xs md:text-lg font-black ${isInc ? 'text-github-success' : (isExp ? 'text-github-danger' : 'text-github-text')}`}>
                       {isInc ? '+' : (isExp ? '-' : '')}{formatCurrency(t.amount)}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2 md:gap-3">
-                  <div className="flex gap-1 md:gap-2 flex-wrap">
-                      <div className="flex items-center gap-1 px-1.5 md:px-2 py-0.5 bg-github-bg border border-github-border rounded-lg md:rounded-xl">
-                          <Tag size={8} className="hidden md:block" style={{ color: cat?.color || 'gray' }} /><Tag size={7} className="md:hidden" style={{ color: cat?.color || 'gray' }} />
-                          <span className="text-[7px] md:text-[10px] font-bold uppercase tracking-tighter text-github-text truncate">{cat?.name || 'Sistema'}</span>
+                <div className="flex flex-col gap-1.5 md:gap-3">
+                  <div className="flex gap-1 flex-wrap">
+                      <div className="flex items-center gap-0.5 md:gap-1 px-1 md:px-2 py-0.5 bg-github-bg border border-github-border rounded-lg md:rounded-xl">
+                          <Tag size={6} className="hidden md:block" style={{ color: cat?.color || 'gray' }} /><Tag size={5} className="md:hidden" style={{ color: cat?.color || 'gray' }} />
+                          <span className="text-[6px] md:text-[10px] font-bold uppercase tracking-tighter text-github-text truncate">{cat?.name || 'Sistema'}</span>
                       </div>
-                      <div className="flex items-center gap-1 px-1.5 md:px-2 py-0.5 bg-github-bg border border-github-border rounded-lg md:rounded-xl">
-                          <Wallet size={8} className="hidden md:block text-github-muted" /><Wallet size={7} className="md:hidden text-github-muted" />
-                          <span className="text-[7px] md:text-[10px] font-bold uppercase tracking-tighter text-github-muted truncate">
-                              {bank?.name?.slice(0, 8)} {isTrans && toBank && <><ArrowRightLeft size={6} className="mx-0.5"/> {toBank.name?.slice(0, 8)}</>}
+                      <div className="flex items-center gap-0.5 md:gap-1 px-1 md:px-2 py-0.5 bg-github-bg border border-github-border rounded-lg md:rounded-xl">
+                          <Wallet size={6} className="hidden md:block text-github-muted" /><Wallet size={5} className="md:hidden text-github-muted" />
+                          <span className="text-[6px] md:text-[10px] font-bold uppercase tracking-tighter text-github-muted truncate">
+                              {bank?.name?.slice(0, 8)} {isTrans && toBank && <><ArrowRightLeft size={5} className="mx-0.5"/> {toBank.name?.slice(0, 8)}</>}
                           </span>
                       </div>
                   </div>

@@ -263,39 +263,40 @@ const HealthThermometer = () => {
   }, [balance, healthThresholds]);
 
   return (
-    <Card className="p-6 relative overflow-hidden group min-h-[200px] border-github-border flex items-stretch gap-6">
+    <Card className="p-4 md:p-6 relative overflow-hidden group min-h-[180px] md:min-h-[200px] border-github-border flex flex-col md:flex-row items-stretch gap-4 md:gap-6">
       <div className="flex-1 flex flex-col justify-between z-10">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Droplets size={16} className="text-github-primary" />
-            <h3 className="text-xs font-black uppercase tracking-widest text-github-muted">Status de Saúde</h3>
+            <Droplets size={14} className="md:block hidden text-github-primary" />
+            <Droplets size={12} className="md:hidden text-github-primary" />
+            <h3 className="text-xs md:text-sm font-black uppercase tracking-widest text-github-muted">Status de Saúde</h3>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-black transition-colors duration-500" style={{ color: healthStatus.color }}>
+            <span className="text-2xl md:text-4xl font-black transition-colors duration-500" style={{ color: healthStatus.color }}>
                 {healthStatus.label}
             </span>
           </div>
-          <p className="text-sm text-github-muted mt-2 font-medium">
+          <p className="text-xs md:text-sm text-github-muted mt-1 md:mt-2 font-medium">
             {healthStatus.message}
           </p>
         </div>
 
-        <div className="mt-4">
-           <p className="text-[10px] text-github-muted font-black uppercase tracking-tighter">Patrimônio Líquido Atual</p>
-           <p className="text-2xl font-mono font-bold text-github-text">{formatCurrency(balance)}</p>
+        <div className="mt-3 md:mt-4">
+           <p className="text-[8px] md:text-[10px] text-github-muted font-black uppercase tracking-tighter">Patrimônio Líquido Atual</p>
+           <p className="text-xl md:text-2xl font-mono font-bold text-github-text">{formatCurrency(balance)}</p>
            {permissionStatus === 'prompt' && (
              <button 
                 onClick={requestPermission}
-                className="mt-2 text-[9px] font-black uppercase flex items-center gap-1 text-github-primary hover:underline opacity-60 hover:opacity-100"
+                className="mt-1.5 md:mt-2 text-[8px] md:text-[9px] font-black uppercase flex items-center gap-1 text-github-primary hover:underline opacity-60 hover:opacity-100"
              >
-                <Smartphone size={10} /> Ativar Sensores de Movimento
+                <Smartphone size={10} /> Ativar Sensores
              </button>
            )}
         </div>
       </div>
 
-      <div className="relative w-16 flex flex-col items-center justify-end py-2">
-        <div className="relative w-8 h-full bg-github-bg border-2 border-github-border rounded-full overflow-hidden shadow-inner flex flex-col justify-end">
+      <div className="relative w-12 md:w-16 flex flex-col items-center justify-end py-1.5 md:py-2">
+        <div className="relative w-6 md:w-8 h-20 md:h-full bg-github-bg border-2 border-github-border rounded-full overflow-hidden shadow-inner flex flex-col justify-end">
           <div 
             className="w-full transition-all duration-1000 ease-out relative"
             style={{ 
@@ -305,7 +306,7 @@ const HealthThermometer = () => {
             }}
           >
             <div 
-              className="absolute top-0 left-[-50%] right-[-50%] h-4 transition-transform duration-300"
+              className="absolute top-0 left-[-50%] right-[-50%] h-2 md:h-4 transition-transform duration-300"
               style={{ 
                 backgroundColor: healthStatus.color,
                 borderRadius: '50%',
@@ -313,18 +314,18 @@ const HealthThermometer = () => {
                 filter: 'brightness(1.1)'
               }}
             />
-            <div className="absolute inset-y-0 left-1 w-1 bg-white/20 rounded-full" />
+            <div className="absolute inset-y-0 left-0.5 md:left-1 w-0.5 md:w-1 bg-white/20 rounded-full" />
           </div>
-          <div className="absolute inset-0 flex flex-col justify-between py-4 pointer-events-none opacity-20">
+          <div className="absolute inset-0 flex flex-col justify-between py-2 md:py-4 pointer-events-none opacity-20">
             {[...Array(6)].map((_, i) => (
                 <div key={i} className="w-full flex justify-center">
-                    <div className="w-3 h-[1px] bg-github-text" />
+                    <div className="w-2 md:w-3 h-[0.5px] md:h-[1px] bg-github-text" />
                 </div>
             ))}
           </div>
         </div>
         <div 
-            className="w-10 h-10 rounded-full border-2 border-github-border -mt-4 z-20 transition-colors duration-500" 
+            className="w-8 md:w-10 h-8 md:h-10 rounded-full border-2 border-github-border -mt-2 md:-mt-4 z-20 transition-colors duration-500" 
             style={{ backgroundColor: healthStatus.color, boxShadow: `0 4px 10px ${healthStatus.color}44` }}
         >
             <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-black/20 to-white/20 pointer-events-none" />
@@ -387,21 +388,23 @@ export const Dashboard = () => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
       
-      <div className="flex items-center gap-4 mb-8">
-        <div className="h-16 w-16 flex-shrink-0">
-          <img src={logoImg} alt="Logo" className="h-full w-full object-contain" />
+      <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-8">
+        <div className="flex items-center gap-4 flex-1">
+          <div className="h-12 md:h-16 w-12 md:w-16 flex-shrink-0">
+            <img src={logoImg} alt="Logo" className="h-full w-full object-contain" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl md:text-2xl font-black text-github-text uppercase tracking-tighter">Dashboard</h2>
+            <p className="text-[10px] md:text-xs text-github-muted font-medium">Bem-vindo de volta ao seu controle financeiro</p>
+          </div>
         </div>
-        <div className="flex-1">
-          <h2 className="text-2xl font-black text-github-text uppercase tracking-tighter">Dashboard</h2>
-          <p className="text-xs text-github-muted font-medium">Bem-vindo de volta ao seu controle financeiro</p>
-        </div>
-        <div className="flex items-center bg-github-surface border border-github-border rounded-2xl p-1 shadow-sm">
-          <button onClick={() => setSelectedMonth(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() - 1, 1))} className="p-2 hover:bg-github-border rounded-lg text-github-muted transition-all"><ChevronLeft size={20} /></button>
-          <div className="relative px-4 text-center group cursor-pointer">
-             <span className="text-sm font-black uppercase tracking-tighter block w-32 text-github-text">{selectedMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</span>
+        <div className="flex items-center bg-github-surface border border-github-border rounded-2xl p-1 shadow-sm w-full lg:w-auto">
+          <button onClick={() => setSelectedMonth(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() - 1, 1))} className="p-2 hover:bg-github-border rounded-lg text-github-muted transition-all flex-shrink-0"><ChevronLeft size={16} className="md:hidden" /><ChevronLeft size={20} className="hidden md:block" /></button>
+          <div className="relative px-2 md:px-4 text-center group cursor-pointer flex-1">
+             <span className="text-[10px] md:text-sm font-black uppercase tracking-tighter block text-github-text">{selectedMonth.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}</span>
              <input type="month" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => { if (e.target.value) { const [year, month] = e.target.value.split('-'); setSelectedMonth(new Date(parseInt(year), parseInt(month) - 1, 1)); } }} value={`${selectedMonth.getFullYear()}-${String(selectedMonth.getMonth() + 1).padStart(2, '0')}`} />
           </div>
-          <button onClick={() => setSelectedMonth(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1))} className="p-2 hover:bg-github-border rounded-lg text-github-muted transition-all"><ChevronRight size={20} /></button>
+          <button onClick={() => setSelectedMonth(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1))} className="p-2 hover:bg-github-border rounded-lg text-github-muted transition-all flex-shrink-0"><ChevronRight size={16} className="md:hidden" /><ChevronRight size={20} className="hidden md:block" /></button>
         </div>
       </div>
       
@@ -453,12 +456,12 @@ export const Dashboard = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 p-6 flex flex-col h-[500px] overflow-hidden group">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <Card className="lg:col-span-2 p-4 md:p-6 flex flex-col h-[300px] md:h-[500px] overflow-hidden group">
           <div className="flex justify-between items-start mb-2">
             <div>
-              <h3 className="text-sm font-black uppercase tracking-widest text-github-muted">Exploração Patrimonial 3D</h3>
-              <p className="text-[10px] text-github-muted italic">Arraste para girar • Clique para destacar</p>
+              <h3 className="text-xs md:text-sm font-black uppercase tracking-widest text-github-muted">Exploração Patrimonial 3D</h3>
+              <p className="text-[8px] md:text-[10px] text-github-muted italic">Arraste para girar • Clique para destacar</p>
             </div>
           </div>
           
@@ -486,22 +489,22 @@ export const Dashboard = () => {
           </div>
         </Card>
 
-        <Card className="p-6 flex flex-col justify-between">
+        <Card className="p-4 md:p-6 flex flex-col justify-between h-full">
           <div>
-            <h3 className="text-sm font-black uppercase tracking-widest text-github-muted mb-6">Investimentos Ativos</h3>
-            <div className="space-y-6">
-                <div className="p-5 bg-github-bg rounded-2xl border border-github-border shadow-inner group">
+            <h3 className="text-xs md:text-sm font-black uppercase tracking-widest text-github-muted mb-4 md:mb-6">Investimentos Ativos</h3>
+            <div className="space-y-4 md:space-y-6">
+                <div className="p-4 md:p-5 bg-github-bg rounded-2xl border border-github-border shadow-inner group">
                     <div className="flex justify-between items-center mb-3">
-                        <p className="text-xs font-black uppercase text-github-muted">Total Acumulado</p>
+                        <p className="text-[8px] md:text-xs font-black uppercase text-github-muted">Total Acumulado</p>
                     </div>
-                    <p className="text-3xl font-black text-github-success tracking-tighter">{formatCurrency(stats.investments || 0)}</p>
-                    <div className="w-full bg-github-surface h-2.5 rounded-full mt-4 overflow-hidden border border-github-border">
+                    <p className="text-2xl md:text-3xl font-black text-github-success tracking-tighter">{formatCurrency(stats.investments || 0)}</p>
+                    <div className="w-full bg-github-surface h-2 md:h-2.5 rounded-full mt-4 overflow-hidden border border-github-border">
                         <div className="bg-github-success h-full transition-all duration-1000" style={{ width: (stats.investments || 0) > 0 ? '100%' : '0%' }}></div>
                     </div>
                 </div>
                 
-                <div className="p-4 rounded-xl border border-github-border/40 bg-github-surface/30">
-                    <p className="text-[11px] text-github-muted italic leading-relaxed">
+                <div className="p-3 md:p-4 rounded-xl border border-github-border/40 bg-github-surface/30">
+                    <p className="text-[9px] md:text-[11px] text-github-muted italic leading-relaxed">
                         {(stats.investments || 0) > 0 
                             ? "Seus aportes estão trabalhando por você. Continue diversificando!"
                             : "Comece a investir hoje mesmo para construir seu futuro."}
@@ -510,11 +513,12 @@ export const Dashboard = () => {
             </div>
           </div>
           
-          <div className="mt-8 pt-6 border-t border-github-border text-center">
-            <p className="text-[10px] font-black uppercase text-github-muted tracking-widest mb-2">Monitoramento</p>
+          <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-github-border text-center">
+            <p className="text-[8px] md:text-[10px] font-black uppercase text-github-muted tracking-widest mb-2">Monitoramento</p>
             <div className="flex items-center justify-center gap-2 text-github-muted">
-                <Clock size={16} />
-                <span className="font-bold text-xs uppercase tracking-tighter">Dados atualizados em tempo real</span>
+                <Clock size={14} className="md:block hidden" />
+                <Clock size={12} className="md:hidden" />
+                <span className="font-bold text-[8px] md:text-xs uppercase tracking-tighter">Dados atualizados em tempo real</span>
             </div>
           </div>
         </Card>
