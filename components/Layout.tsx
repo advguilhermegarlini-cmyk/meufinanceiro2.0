@@ -71,13 +71,13 @@ export const Layout = ({ children, activeTab, setActiveTab }: {
 
   const tabs = [
     { id: 'dashboard', label: 'Início', icon: LayoutDashboard },
-    { id: 'transactions', label: 'Extrato', icon: Receipt },
+    { id: 'transactions', label: 'Fluxo de Caixa', icon: Receipt },
     { id: 'fixed-incomes', label: 'Entradas Fixas', icon: ArrowUpCircle },
     { id: 'fixed-expenses', label: 'Saídas Fixas', icon: ArrowDownCircle },
-    { id: 'credit', label: 'Cartões', icon: CreditCard },
-    { id: 'banks', label: 'Contas', icon: Wallet },
+    { id: 'credit', label: 'Cartão de Crédito', icon: CreditCard },
+    { id: 'banks', label: 'Contas Bancárias', icon: Wallet },
     { id: 'categories', label: 'Categorias', icon: Tags },
-    { id: 'investments', label: 'Investir', icon: TrendingUp },
+    { id: 'investments', label: 'Investimento', icon: TrendingUp },
     { id: 'profile', label: 'Perfil', icon: UserIcon },
   ];
 

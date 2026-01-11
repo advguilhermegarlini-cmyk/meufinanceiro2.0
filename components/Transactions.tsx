@@ -86,7 +86,7 @@ export const Transactions = () => {
             <button onClick={() => changeMonth(1)} className="p-2 hover:bg-github-border rounded-lg text-github-muted transition-all"><ChevronRight size={16} className="md:hidden" /><ChevronRight size={18} className="hidden md:block" /></button>
           </div>
           
-          <Button onClick={() => { setEditingTransaction(null); setTransactionModalOpen(true); }} variant="primary" className="w-full sm:w-auto px-3 md:px-8 py-3 rounded-2xl shadow-xl shadow-github-success/10 text-xs md:text-sm whitespace-nowrap"><Plus size={14} className="md:hidden" /><Plus size={18} className="hidden md:block" /> <span className="hidden sm:inline">Nova</span><span className="sm:hidden">+</span><span className="hidden sm:inline"> Tx</span></Button>
+          <Button onClick={() => { setEditingTransaction(null); setTransactionModalOpen(true); }} variant="primary" className="w-full sm:w-auto px-3 md:px-8 py-3 rounded-2xl shadow-xl shadow-github-success/10 text-xs md:text-sm whitespace-nowrap"><Plus size={14} className="md:hidden" /><Plus size={18} className="hidden md:block" /> <span className="hidden sm:inline">Novo</span><span className="sm:hidden">+</span><span className="hidden sm:inline"> Fluxo</span></Button>
         </div>
       </div>
 

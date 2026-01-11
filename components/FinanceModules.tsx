@@ -320,11 +320,11 @@ export const CreditCardsModule = () => {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-3xl font-black text-github-text tracking-tighter uppercase">Meus Cartões</h2>
+                    <h2 className="text-3xl font-black text-github-text tracking-tighter uppercase">Cartão de Crédito</h2>
                     <p className="text-sm text-github-muted">Gestão inteligente de limites e faturas</p>
                 </div>
                 <Button onClick={() => setIsFormOpen(true)} className="px-6 py-3 rounded-2xl">
-                    <Plus size={20} /> Novo Cartão
+                    <Plus size={20} /> Novo Cartão de Crédito
                 </Button>
             </div>
             
@@ -416,11 +416,11 @@ export const BanksModule = () => {
         <div className="space-y-8">
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-3xl font-black text-github-text tracking-tighter uppercase">Minhas Contas</h2>
+                    <h2 className="text-3xl font-black text-github-text tracking-tighter uppercase">Contas Bancárias</h2>
                     <p className="text-sm text-github-muted">Saldos e disponibilidades financeiras</p>
                 </div>
                 <Button onClick={() => { setEditingBank(null); setIsModalOpen(true); }} className="px-6 py-3 rounded-2xl">
-                    <Plus size={20} /> Adicionar Conta
+                    <Plus size={20} /> Nova Conta Bancária
                 </Button>
             </div>
 
@@ -453,7 +453,7 @@ export const BanksModule = () => {
             </div>
 
             {/* Modal de Conta (Novo/Editar) */}
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingBank ? "Editar Conta" : "Nova Conta Bancária"}>
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingBank ? "Editar Conta Bancária" : "Nova Conta Bancária"}>
                 <form onSubmit={handleAddOrUpdate} className="space-y-6">
                     <div className="space-y-1.5">
                         <label className="text-[10px] font-black uppercase tracking-widest text-github-muted px-1">Instituição</label>
@@ -705,11 +705,11 @@ export const InvestmentsModule = () => {
         <div className="space-y-8">
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-3xl font-black text-github-text tracking-tighter uppercase">Investimentos</h2>
+                    <h2 className="text-3xl font-black text-github-text tracking-tighter uppercase">Investimento</h2>
                     <p className="text-sm text-github-muted">Construa seu patrimônio e monitore rendimentos</p>
                 </div>
                 <Button onClick={() => setIsModalOpen(true)} className="px-6 py-3 rounded-2xl">
-                    <Plus size={20} /> Novo Ativo
+                    <Plus size={20} /> Novo Investimento
                 </Button>
             </div>
 
